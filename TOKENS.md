@@ -40,8 +40,7 @@
 
 ## Other
 
-| Token      	| Meaning                     	| Java symbol 	| C++ symbol 	|
-|------------	|-----------------------------	|-------------	|------------	|
-| ILCOMMENT  	| Inline comment              	| //          	| //         	|
-| LMLCOMMENT 	| Left multi-line comment     	| /*          	| /*         	|
-| RMLCOMMENT 	| Right multi-line comment    	| */          	| */         	|
+| Token     	| Meaning                     	| Java symbol 	| C++ symbol 	|
+|-----------	|-----------------------------	|-------------	|------------	|
+| ILCOMMENT 	| Inline comment              	| //          	| //         	|
+| MLCOMMENT 	| Multi-line comment          	| /* */       	| /* */      	|
