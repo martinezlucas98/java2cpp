@@ -8,6 +8,7 @@
 %}
 
 %%
+[\n\t ]+                      {/* ignoring newlines, tabs and spaces */}
 
 "/\*"(.|\n)*"\*/"				{strcpy(yylval.var_name, yytext);return MLCOMMENT;}
 
@@ -18,7 +19,7 @@
 "String"							{yylval.data_type=4; return STRING;}
 "boolean"							{yylval.data_type=5; return BOOLEAN;}
 
-"main(String[] args)"							{return MAIN_METHOD;}
+"public static void main(String[] args)"							{return MAIN_METHOD;}
 "public class Main"               {return MAIN_CLASS;}
 
 "if"								  {return IF;}
@@ -36,6 +37,10 @@
 
 "("									  {return LP;}
 ")"									  {return RP;}
+"{"									  {return LC;}
+"}"									  {return RC;}
+"["									  {return LB;}
+"]"									  {return RB;}
 ";"									  {return SEMICOLON;}
 ","									  {return COMA;}
 "="                   {return ASSIGNMENT;}
@@ -55,13 +60,12 @@
 "!"                   {return NOT;}
 "Math.pow("[0-9]+(.[0-9]+)?"[ ]*,[ ]*"[0-9]+(.[0-9]+)?")"   {return EX;}
 
+("true"|"false")              {strcpy(yylval.var_name, yytext);return BOOL_VAL;}
+
 [$_a-zA-Z]+[$_a-zA-Z0-9]*			{strcpy(yylval.var_name, yytext);return VAR;}
-[0-9]+                        {strcpy(yylval.var_name, yytext);return NUMBER;}
-[true|false]                  {strcpy(yylval.var_name, yytext);return BOOL_VAL;}
+[0-9]+("."[0-9]+)?            {strcpy(yylval.var_name, yytext);return NUMBER;}
 \"[^"]*\"                     {strcpy(yylval.var_name, yytext);return QUOTED_STRING;}
 '[^']*'                       {strcpy(yylval.var_name, yytext);return QUOTED_STRING;}
-
-[\n\t ]+                      {/* ignoring newlines, tabs and spaces */}
 
 
 %%
