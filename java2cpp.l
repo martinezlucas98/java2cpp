@@ -10,7 +10,8 @@
 %%
 [\n\t ]+                      {/* ignoring newlines, tabs and spaces */}
 
-"/\*"(.|\n)*"\*/"				{strcpy(yylval.var_name, yytext);return MLCOMMENT;}
+"/\*"(.|\n)*"\*/"			{strcpy(yylval.var_name, yytext);return MLCOMMENT;}
+"//"(.)*							{strcpy(yylval.var_name, yytext);return ILCOMMENT;}
 
 "int"                 {yylval.data_type=0; return INT;}
 "char"                {yylval.data_type=1; return CHAR;}
