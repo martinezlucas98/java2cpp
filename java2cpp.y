@@ -26,6 +26,7 @@
 %union{
 int data_type;
 char var_name[MAX_NAME_LEN];
+
 }
 
 %token VAR
@@ -57,6 +58,7 @@ program		: MAIN_CLASS LC { printf("start Main\n"); } STATEMENTS RC { printf("\ne
 
 STATEMENTS			: METHODS STATEMENTS		{ }
 								| VAR_DECLARATION STATEMENTS		{ }
+								|	COMMENT STATEMENTS { }
 								| /* */						{ }
 								;
 
@@ -67,7 +69,7 @@ HAS_ASSIGNMENT		: ASSIGNMENT { printf(" = "); } EXPRESION
 									| /* No assignment */ {}
 
 METHODS		: STATIC TYPE VAR LP PARAMS RP LC	STATEMENTS RC	{ }//printf("static %s %s ( %s ) {", current_data_type, ); }
-					| MAIN_METHOD LC { printf("int main(int argc, char **argv){\n"); } STATEMENTS RC {printf("}\n");}
+					| MAIN_METHOD { printf("int main(int argc, char **argv)"); } LC {printf("{\n");} STATEMENTS RC {printf("\n}\n");}
 					;
 
 PARAMS		: HAS_PARAMS {}
@@ -110,6 +112,10 @@ TERMINAL	: NUMBER { printf("%s", yylval.var_name); }
 					| QUOTED_STRING { printf("%s", yylval.var_name); }
 					| BOOL_VAL { printf("%s", yylval.var_name); }
 					;
+
+COMMENT	: ILCOMMENT		{ printf("%s\n", yylval.var_name); }
+				| MLCOMMENT		{ printf("%s", yylval.var_name); } // falta poner entre los metodos antes y despues del { } creo con POSSIBLE_COMMENT cpaz
+				;
 
 %%
 
