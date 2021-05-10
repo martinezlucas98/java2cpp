@@ -28,7 +28,7 @@ int data_type;
 char var_name[MAX_NAME_LEN];
 }
 
-%token VAR TYPE
+%token VAR
 %token LAND LOR GEQ LEQ NOT GT LT NEQ DEQ PLUS MINUS MUL DIV MOD ASSIGNMENT EX
 %token MAIN_METHOD MAIN_CLASS IF ELSE ELSEIF WHILE FOR CLASS STATIC PUBLIC PRIVATE VOID PRINTLN
 %token BOOL_VAL NUMBER QUOTED_STRING QUOTED_CHAR
@@ -51,7 +51,64 @@ char var_name[MAX_NAME_LEN];
 
 %%
 
-program		: MAIN_CLASS	{printf("main");exit(0);}
+program		: MAIN_CLASS LC { printf("start Main\n"); } STATEMENTS RC { printf("\nend Main\n"); exit(0); }
+					| /* Empty file */								{ printf("\n"); exit(2); }
+					;
+
+STATEMENTS			: METHODS STATEMENTS		{ }
+								| VAR_DECLARATION STATEMENTS		{ }
+								| /* */						{ }
+								;
+
+VAR_DECLARATION		: TYPE  VAR { printf("%s", yylval.var_name); } HAS_ASSIGNMENT SEMICOLON { printf(";\n"); }
+									;
+
+HAS_ASSIGNMENT		: ASSIGNMENT { printf(" = "); } EXPRESION
+									| /* No assignment */ {}
+
+METHODS		: STATIC TYPE VAR LP PARAMS RP LC	STATEMENTS RC	{ }//printf("static %s %s ( %s ) {", current_data_type, ); }
+					| MAIN_METHOD LC { printf("int main(int argc, char **argv){\n"); } STATEMENTS RC {printf("}\n");}
+					;
+
+PARAMS		: HAS_PARAMS {}
+					| /* No parameters */		{ printf(" "); }
+					;
+
+
+HAS_PARAMS	: TERMINAL COMA {printf(",");} HAS_PARAMS { }
+						| TERMINAL										{ }
+						;
+
+EXPRESION			: EXPRESION LAND {printf("&&");} EXPRESION
+					| EXPRESION LOR {printf("||");} EXPRESION
+		 			| EXPRESION LEQ {printf("<=");} EXPRESION
+					| EXPRESION GT {printf(">");} EXPRESION
+					| EXPRESION LT {printf("<");} EXPRESION
+					| EXPRESION NEQ {printf("!=");} EXPRESION
+					| EXPRESION DEQ {printf("==");} EXPRESION
+					| NOT {printf("!");} EXPRESION
+					| EXPRESION PLUS {printf("+");} EXPRESION
+					| EXPRESION MINUS {printf("-");} EXPRESION
+					| EXPRESION MUL {printf("*");} EXPRESION
+					| EXPRESION DIV {printf("/");} EXPRESION
+					| EXPRESION MOD {printf("%%");} EXPRESION
+					| LP { printf("("); } EXPRESION RP { printf(")"); }
+					| TERMINAL
+					;
+
+
+TYPE			: INT { $$=$1; current_data_type=$1;	printf("int "); }
+					| CHAR  { $$=$1; current_data_type=$1; printf("char "); }
+					| FLOAT { $$=$1; current_data_type=$1; printf("float "); }
+					| DOUBLE { $$=$1; current_data_type=$1; printf("double "); }
+					| STRING { $$=$1; current_data_type=$1; printf("String "); }
+					| BOOLEAN { $$=$1; current_data_type=$1; printf("bool "); }
+					;
+
+TERMINAL	: NUMBER { printf("%s", yylval.var_name); }
+					| QUOTED_CHAR { printf("%s", yylval.var_name); }
+					| QUOTED_STRING { printf("%s", yylval.var_name); }
+					| BOOL_VAL { printf("%s", yylval.var_name); }
 					;
 
 %%
