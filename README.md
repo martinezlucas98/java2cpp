@@ -4,7 +4,7 @@ FLEX &amp; BISON Java to C++ translator.
 
 > :warning: **Warning:** java2cpp is still under development and constant changes.
 <br/><br/>
-# Docuentation
+# Documentation
 
 ## Quick Start
 Simply pipe your input file into the translator executable `a.out` :
