@@ -31,7 +31,7 @@ char var_name[MAX_NAME_LEN];
 
 %token VAR
 %token LAND LOR GEQ LEQ NOT GT LT NEQ DEQ PLUS MINUS MUL DIV MOD ASSIGNMENT EX
-%token MAIN_METHOD MAIN_CLASS IF ELSE ELSEIF WHILE FOR CLASS STATIC PUBLIC PRIVATE VOID PRINTLN
+%token MAIN_METHOD MAIN_CLASS IF ELSE ELSEIF WHILE FOR CLASS STATIC PUBLIC PRIVATE VOID PRINTLN NEW
 %token BOOL_VAL NUMBER QUOTED_STRING QUOTED_CHAR
 %token LP RP LC RC LB RB COMA SEMICOLON SQ DQ
 %token ILCOMMENT MLCOMMENT
@@ -63,21 +63,31 @@ STATEMENTS			: METHODS STATEMENTS		{ }
 								| /* */						{ }
 								;
 
+
+VAR_DECLARATION	  : TYPE COLON_ARRAY VAR { printf("%s", yylval.var_name); } HAS_ASSIGNMENT SEMICOLON { printf(";\n"); }
+                  ;
+                  
 IF_STATEMENT		: IF LP { printf("if ("); } EXPRESION RP LC { printf(") {"); } STATEMENTS RC { printf("}"); } ELSE_VARIATIONS
 								;
 
 ELSE_VARIATIONS		: ELSE LC { printf(" else {"); } STATEMENTS RC { printf("}"); }
 									| ELSEIF LP { printf(" else if ("); } EXPRESION RP { printf(")"); } LC { printf(") {"); } STATEMENTS RC { printf("}"); } ELSE_VARIATIONS
-									| /* */ { }
+									| /* */ { printf("\n"); }
 									;
 
+COLON_ARRAY		: LB { printf("[");} NUMARRAY RB  { printf("]");} COLON_ARRAY 
+					    | /* */
+					    ;
 
-
-VAR_DECLARATION		: TYPE  VAR { printf("%s", yylval.var_name); } HAS_ASSIGNMENT SEMICOLON { printf(";\n"); }
-									;
+NUMARRAY			: NUMBER { printf("%s", yylval.var_name); }
+						| /* */
+						;
 
 HAS_ASSIGNMENT		: ASSIGNMENT { printf(" = "); } EXPRESION
 									| /* No assignment */ {}
+									;
+
+
 
 METHODS		: STATIC TYPE VAR LP PARAMS RP LC	STATEMENTS RC	{ }//printf("static %s %s ( %s ) {", current_data_type, ); }
 					| MAIN_METHOD { printf("int main(int argc, char **argv)"); } LC {printf("{\n");} STATEMENTS RC {printf("\n}\n");}
@@ -105,10 +115,18 @@ EXPRESION			: EXPRESION LAND {printf("&&");} EXPRESION
 					| EXPRESION MUL {printf("*");} EXPRESION
 					| EXPRESION DIV {printf("/");} EXPRESION
 					| EXPRESION MOD {printf("%%");} EXPRESION
+					| NEW TYPE COLON_ARRAY
 					| LP { printf("("); } EXPRESION RP { printf(")"); }
+					| LC { printf("{"); } EXPRESION_ARRAY RC { printf("}"); }
 					| TERMINAL
 					;
 
+EXPRESION_ARRAY		: TERMINAL COMA { printf(","); } EXPRESION_ARRAY
+					| COMA { printf(","); }  LC { printf("{"); } EXPRESION_ARRAY RC { printf("}"); }  EXPRESION_ARRAY
+					|  LC { printf("{"); } EXPRESION_ARRAY RC { printf("} "); } EXPRESION_ARRAY
+					| TERMINAL
+					| /* */
+					;
 
 TYPE			: INT { $$=$1; current_data_type=$1;	printf("int "); }
 					| CHAR  { $$=$1; current_data_type=$1; printf("char "); }
