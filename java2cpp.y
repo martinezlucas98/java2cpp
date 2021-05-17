@@ -64,8 +64,7 @@ STATEMENTS			: METHODS STATEMENTS		{ }
 								;
 
 
-VAR_DECLARATION	  : TYPE  VAR { printf("%s", yylval.var_name); } HAS_ASSIGNMENT SEMICOLON { printf(";\n"); }
-                  | TYPE COLON_ARRAY VAR { printf("%s", yylval.var_name); } HAS_ASSIGNMENT SEMICOLON { printf(";\n"); }
+VAR_DECLARATION	  : TYPE COLON_ARRAY VAR { printf("%s", yylval.var_name); } HAS_ASSIGNMENT SEMICOLON { printf(";\n"); }
                   ;
                   
 IF_STATEMENT		: IF LP { printf("if ("); } EXPRESION RP LC { printf(") {"); } STATEMENTS RC { printf("}"); } ELSE_VARIATIONS
