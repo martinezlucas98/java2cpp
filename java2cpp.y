@@ -59,15 +59,26 @@ program		: MAIN_CLASS LC { printf("start Main\n"); } STATEMENTS RC { printf("\ne
 STATEMENTS			: METHODS STATEMENTS		{ }
 								| VAR_DECLARATION STATEMENTS		{ }
 								|	COMMENT STATEMENTS { }
+								| IF_STATEMENT { }
 								| /* */						{ }
 								;
 
-VAR_DECLARATION		: TYPE COLON_ARRAY VAR { printf("%s", yylval.var_name); } HAS_ASSIGNMENT SEMICOLON { printf(";\n"); }
+
+VAR_DECLARATION	  : TYPE  VAR { printf("%s", yylval.var_name); } HAS_ASSIGNMENT SEMICOLON { printf(";\n"); }
+                  | TYPE COLON_ARRAY VAR { printf("%s", yylval.var_name); } HAS_ASSIGNMENT SEMICOLON { printf(";\n"); }
+                  ;
+                  
+IF_STATEMENT		: IF LP { printf("if ("); } EXPRESION RP LC { printf(") {"); } STATEMENTS RC { printf("}"); } ELSE_VARIATIONS
+								;
+
+ELSE_VARIATIONS		: ELSE LC { printf(" else {"); } STATEMENTS RC { printf("}"); }
+									| ELSEIF LP { printf(" else if ("); } EXPRESION RP { printf(")"); } LC { printf(") {"); } STATEMENTS RC { printf("}"); } ELSE_VARIATIONS
+									| /* */ { printf("\n"); }
 									;
 
 COLON_ARRAY		: LB { printf("[");} NUMARRAY RB  { printf("]");} COLON_ARRAY 
-					|/* */
-					;
+					    | /* */
+					    ;
 
 NUMARRAY			: NUMBER { printf("%s", yylval.var_name); }
 						| /* */
@@ -135,6 +146,7 @@ TERMINAL	: NUMBER { printf("%s", yylval.var_name); }
 COMMENT	: ILCOMMENT		{ printf("%s\n", yylval.var_name); }
 				| MLCOMMENT		{ printf("%s", yylval.var_name); } // falta poner entre los metodos antes y despues del { } creo con POSSIBLE_COMMENT cpaz
 				;
+
 
 %%
 
