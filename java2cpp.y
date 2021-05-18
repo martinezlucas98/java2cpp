@@ -107,17 +107,20 @@ HAS_ASSIGNMENT		: ASSIGNMENT { printf(" = "); } EXPRESION
 					| /* No assignment */ {}
 					;
 
-METHODS		: STATIC TYPE VAR LP PARAMS RP LC	STATEMENTS RC	{ }//printf("static %s %s ( %s ) {", current_data_type, ); }
+METHODS		: SCOPE STATIC TYPE VAR LP { printf("( "); } PARAMS RP { printf(") "); } LC	{ printf("{\n"); } STATEMENTS RC { printf("}\n"); }	{ }//printf("static %s %s ( %s ) {", current_data_type, ); }
 					| MAIN_METHOD { printf("int main(int argc, char **argv)"); } LC {printf("{\n");} STATEMENTS RC {printf("\n}\n");}
 					;
 
-PARAMS		: HAS_PARAMS {}
-					| /* No parameters */		{ printf(" "); }
+SCOPE		: PUBLIC | PRIVATE | /* */
+PARAMS		: HAS_PARAMS PARAMS
+			| COMA {printf(",");}  HAS_PARAMS
+			| /* No parameters */		{ printf(" "); }
 					;
 
 
-HAS_PARAMS	: TERMINAL COMA {printf(",");} HAS_PARAMS { }
-						| TERMINAL										{ }
+HAS_PARAMS			: TYPE VAR { printf("%s", yylval.var_name); } 
+					| TYPE  COLON_ARRAY VAR {for(;bracket_counter>0;bracket_counter--)printf("*");printf("%s", yylval.var_name);} 
+					| /* */								
 						;
 
 EXPRESION			: EXPRESION LAND {printf("&&");} EXPRESION
@@ -164,6 +167,7 @@ TYPE			: INT { $$=$1; current_data_type=$1;	printf("int "); }
 					| DOUBLE { $$=$1; current_data_type=$1; printf("double "); }
 					| STRING { $$=$1; current_data_type=$1; printf("String "); }
 					| BOOLEAN { $$=$1; current_data_type=$1; printf("bool "); }
+					| VOID {printf("void "); }
 					;
 
 TERMINAL	: NUMBER { printf("%s", yylval.var_name); }
