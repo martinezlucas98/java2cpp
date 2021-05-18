@@ -8,6 +8,7 @@
 	int yyerror(const char *s);
 	int success = 1;
 	int current_data_type;
+	int bracket_counter=0;
 	int expn_type = -1;
 	int temp;
 	int idx = 0;
@@ -26,7 +27,6 @@
 %union{
 int data_type;
 char var_name[MAX_NAME_LEN];
-
 }
 
 %token VAR
@@ -45,9 +45,9 @@ char var_name[MAX_NAME_LEN];
 %token<data_type>STRING
 %token<data_type>BOOLEAN
 
-%type<data_type>TYPE
-%type<var_name>VAR
 
+
+%type<data_type>TYPE
 %start program
 
 %%
@@ -64,12 +64,16 @@ STATEMENTS			: METHODS STATEMENTS		{ }
 								| /* */						{ }
 								;
 
-
 VAR_DECLARATION	  : VAR_DECLARATION_no_semicolon SEMICOLON { printf(";\n"); }
                   ;
-
+                  
 VAR_ASSIGNATION		: VAR_ASSIGNATION_no_semicolon SEMICOLON { printf(";\n"); }
 									;
+
+COLON_ARRAY			: LB NUMARRAY RB  COLON_ARRAY  
+					|  LB RB  {bracket_counter++;} COLON_ARRAY 
+					| /* */
+					;
 
 VAR_DECLARATION_no_semicolon	  : TYPE VAR { printf("%s", yylval.var_name); } HAS_ASSIGNMENT
 									| TYPE COLON_ARRAY VAR { printf("%s", yylval.var_name); } HAS_ASSIGNMENT
@@ -86,20 +90,14 @@ ELSE_VARIATIONS		: ELSE LC { printf(" else {"); } STATEMENTS RC { printf("}"); }
 									| /* */ { printf("\n"); }
 									;
 
-COLON_ARRAY		: LB { printf("[");} NUMARRAY RB  { printf("]");} COLON_ARRAY_MORE
-					    ;
-
-COLON_ARRAY_MORE		: LB { printf("[");} NUMARRAY RB  { printf("]");} COLON_ARRAY_MORE
-					    | /* */
-					    ;
-
-NUMARRAY			: NUMBER { printf("%s", yylval.var_name); }
-						| /* */
-						;
+NUMARRAY			: NUMBER   {printf("[%s]", yylval.var_name);} 
+					| VAR { printf("[%s]", yylval.var_name); } 
+					;
 
 HAS_ASSIGNMENT		: ASSIGNMENT { printf(" = "); } EXPRESION
-									| /* No assignment */ {}
-									;
+                  | ASSIGNMENT EXPRESION_ARRAY
+					        | /* No assignment */ {}
+                  ;
 
 FOR_LOOP	: FOR LP { printf("for ("); } DECL_EXPR SEMICOLON { printf("; "); } DECL_EXPR SEMICOLON { printf("; "); } EXPRESION RP LC { printf(") {"); } STATEMENTS RC { printf("}\n"); }
 					;
@@ -108,7 +106,7 @@ DECL_EXPR	: EXPRESION
 					| VAR_DECLARATION_no_semicolon { }
 					| VAR_ASSIGNATION_no_semicolon { }
 					| /* */  { }
-					;
+          ;
 
 METHODS		: STATIC TYPE VAR LP PARAMS RP LC	STATEMENTS RC	{ }//printf("static %s %s ( %s ) {", current_data_type, ); }
 					| MAIN_METHOD { printf("int main(int argc, char **argv)"); } LC {printf("{\n");} STATEMENTS RC {printf("\n}\n");}
@@ -136,7 +134,6 @@ EXPRESION			: EXPRESION LAND {printf("&&");} EXPRESION
 					| EXPRESION MUL {printf("*");} EXPRESION
 					| EXPRESION DIV {printf("/");} EXPRESION
 					| EXPRESION MOD {printf("%%");} EXPRESION
-					| NEW TYPE COLON_ARRAY
 					| LP { printf("("); } EXPRESION RP { printf(")"); }
 					| LC { printf("{"); } EXPRESION_ARRAY RC { printf("}"); }
 					| EXPRESION PLUS PLUS { printf("++"); }
@@ -144,11 +141,22 @@ EXPRESION			: EXPRESION LAND {printf("&&");} EXPRESION
 					| TERMINAL
 					;
 
-EXPRESION_ARRAY		: TERMINAL COMA { printf(","); } EXPRESION_ARRAY
-					| COMA { printf(","); }  LC { printf("{"); } EXPRESION_ARRAY RC { printf("}"); }  EXPRESION_ARRAY
-					|  LC { printf("{"); } EXPRESION_ARRAY RC { printf("} "); } EXPRESION_ARRAY
+EXPRESION_ARRAY		: NEW TYPE_NO_PRINT COLON_ARRAY {bracket_counter=0;} 
+					|{for(;bracket_counter>0;bracket_counter--)printf("[]");}LC { printf("= {"); } EXPRESION_ARRAY_INITIALIZE RC { printf("} "); }
+
+EXPRESION_ARRAY_INITIALIZE		: TERMINAL COMA { printf(","); } EXPRESION_ARRAY_INITIALIZE
+					| COMA { printf(","); }  LC { printf("{"); } EXPRESION_ARRAY_INITIALIZE RC { printf("}"); }  EXPRESION_ARRAY_INITIALIZE
+					|  LC { printf("{"); } EXPRESION_ARRAY_INITIALIZE RC { printf("} "); } EXPRESION_ARRAY_INITIALIZE
 					| TERMINAL
 					| /* */
+					;
+
+TYPE_NO_PRINT		: INT 
+					| CHAR
+					| FLOAT 
+					| DOUBLE
+					| STRING 
+					| BOOLEAN
 					;
 
 TYPE			: INT { $$=$1; current_data_type=$1;	printf("int "); }
