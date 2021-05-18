@@ -33,7 +33,7 @@ char var_name[MAX_NAME_LEN];
 %token LAND LOR GEQ LEQ NOT GT LT NEQ DEQ PLUS MINUS MUL DIV MOD ASSIGNMENT EX
 %token MAIN_METHOD MAIN_CLASS IF ELSE ELSEIF WHILE FOR CLASS STATIC PUBLIC PRIVATE VOID PRINTLN NEW
 %token BOOL_VAL NUMBER QUOTED_STRING QUOTED_CHAR
-%token LP RP LC RC LB RB COMA SEMICOLON SQ DQ
+%token LP RP LC RC LB RB COMA SEMICOLON COLON QM SQ DQ
 %token ILCOMMENT MLCOMMENT
 
 %left LAND LOR GEQ LEQ NOT GT LT NEQ DEQ PLUS MINUS MUL DIV MOD
@@ -64,9 +64,10 @@ STATEMENTS			: METHODS STATEMENTS		{ }
 								;
 
 
-VAR_DECLARATION	  : TYPE COLON_ARRAY VAR { printf("%s", yylval.var_name); } HAS_ASSIGNMENT SEMICOLON { printf(";\n"); }
+VAR_DECLARATION	  : TYPE VAR { printf("%s", yylval.var_name); } HAS_ASSIGNMENT SEMICOLON { printf(";\n"); }
+									| TYPE COLON_ARRAY VAR { printf("%s", yylval.var_name); } HAS_ASSIGNMENT SEMICOLON { printf(";\n"); }
                   ;
-                  
+
 IF_STATEMENT		: IF LP { printf("if ("); } EXPRESION RP LC { printf(") {"); } STATEMENTS RC { printf("}"); } ELSE_VARIATIONS
 								;
 
@@ -75,7 +76,10 @@ ELSE_VARIATIONS		: ELSE LC { printf(" else {"); } STATEMENTS RC { printf("}"); }
 									| /* */ { printf("\n"); }
 									;
 
-COLON_ARRAY		: LB { printf("[");} NUMARRAY RB  { printf("]");} COLON_ARRAY 
+COLON_ARRAY		: LB { printf("[");} NUMARRAY RB  { printf("]");} COLON_ARRAY_MORE
+					    ;
+
+COLON_ARRAY_MORE		: LB { printf("[");} NUMARRAY RB  { printf("]");} COLON_ARRAY_MORE
 					    | /* */
 					    ;
 

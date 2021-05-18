@@ -37,6 +37,8 @@
 "void"                {return VOID;}
 "Sysem.out.println"   {return PRINTLN;}
 
+":"										{return COLON;}
+"?"										{return QM;}
 "("									  {return LP;}
 ")"									  {return RP;}
 "{"									  {return LC;}
