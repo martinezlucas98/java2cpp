@@ -60,18 +60,27 @@ STATEMENTS			: METHODS STATEMENTS		{ }
 								| VAR_DECLARATION STATEMENTS		{ }
 								|	COMMENT STATEMENTS { }
 								| IF_STATEMENT { }
+								| FOR_LOOP { }
 								| /* */						{ }
 								;
 
-VAR_DECLARATION		: TYPE  VAR { printf("%s", yylval.var_name); } HAS_ASSIGNMENT SEMICOLON { printf(";\n"); }
-					| TYPE  COLON_ARRAY VAR { printf("%s", yylval.var_name);} HAS_ASSIGNMENT SEMICOLON { printf(";\n"); }
-					;
+VAR_DECLARATION	  : VAR_DECLARATION_no_semicolon SEMICOLON { printf(";\n"); }
+                  ;
+                  
+VAR_ASSIGNATION		: VAR_ASSIGNATION_no_semicolon SEMICOLON { printf(";\n"); }
+									;
 
 COLON_ARRAY			: LB NUMARRAY RB  COLON_ARRAY  
 					|  LB RB  {bracket_counter++;} COLON_ARRAY 
 					| /* */
 					;
 
+VAR_DECLARATION_no_semicolon	  : TYPE VAR { printf("%s", yylval.var_name); } HAS_ASSIGNMENT
+									| TYPE COLON_ARRAY VAR { printf("%s", yylval.var_name); } HAS_ASSIGNMENT
+                  ;
+
+VAR_ASSIGNATION_no_semicolon		: VAR { printf("%s", yylval.var_name); } ASSIGNMENT {printf(" = ");} EXPRESION
+																		;
 
 IF_STATEMENT		: IF LP { printf("if ("); } EXPRESION RP LC { printf(") {"); } STATEMENTS RC { printf("}"); } ELSE_VARIATIONS
 								;
@@ -86,9 +95,18 @@ NUMARRAY			: NUMBER   {printf("[%s]", yylval.var_name);}
 					;
 
 HAS_ASSIGNMENT		: ASSIGNMENT { printf(" = "); } EXPRESION
-					| ASSIGNMENT EXPRESION_ARRAY
-					| /* No assignment */ {}
+                  | ASSIGNMENT EXPRESION_ARRAY
+					        | /* No assignment */ {}
+                  ;
+
+FOR_LOOP	: FOR LP { printf("for ("); } DECL_EXPR SEMICOLON { printf("; "); } DECL_EXPR SEMICOLON { printf("; "); } EXPRESION RP LC { printf(") {"); } STATEMENTS RC { printf("}\n"); }
 					;
+
+DECL_EXPR	: EXPRESION
+					| VAR_DECLARATION_no_semicolon { }
+					| VAR_ASSIGNATION_no_semicolon { }
+					| /* */  { }
+          ;
 
 METHODS		: STATIC TYPE VAR LP PARAMS RP LC	STATEMENTS RC	{ }//printf("static %s %s ( %s ) {", current_data_type, ); }
 					| MAIN_METHOD { printf("int main(int argc, char **argv)"); } LC {printf("{\n");} STATEMENTS RC {printf("\n}\n");}
@@ -117,6 +135,9 @@ EXPRESION			: EXPRESION LAND {printf("&&");} EXPRESION
 					| EXPRESION DIV {printf("/");} EXPRESION
 					| EXPRESION MOD {printf("%%");} EXPRESION
 					| LP { printf("("); } EXPRESION RP { printf(")"); }
+					| LC { printf("{"); } EXPRESION_ARRAY RC { printf("}"); }
+					| EXPRESION PLUS PLUS { printf("++"); }
+					| EXPRESION MINUS MINUS { printf("--"); }
 					| TERMINAL
 					;
 
@@ -150,6 +171,7 @@ TERMINAL	: NUMBER { printf("%s", yylval.var_name); }
 					| QUOTED_CHAR { printf("%s", yylval.var_name); }
 					| QUOTED_STRING { printf("%s", yylval.var_name); }
 					| BOOL_VAL { printf("%s", yylval.var_name); }
+					| VAR { printf("%s", yylval.var_name); }
 					;
 
 COMMENT	: ILCOMMENT		{ printf("%s\n", yylval.var_name); }
