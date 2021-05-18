@@ -59,8 +59,8 @@ program		: MAIN_CLASS LC { printf("start Main\n"); } STATEMENTS RC { printf("\ne
 STATEMENTS			: METHODS STATEMENTS		{ }
 								| VAR_DECLARATION STATEMENTS		{ }
 								|	COMMENT STATEMENTS { }
-								| IF_STATEMENT { }
-								| FOR_LOOP { }
+								| IF_STATEMENT STATEMENTS { }
+								| FOR_LOOP STATEMENTS { }
 								| /* */						{ }
 								;
 
