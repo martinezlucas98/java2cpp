@@ -60,18 +60,21 @@ STATEMENTS			: METHODS STATEMENTS		{ }
 								| VAR_DECLARATION STATEMENTS		{ }
 								|	COMMENT STATEMENTS { }
 								| IF_STATEMENT { }
+								| FOR_LOOP { }
 								| /* */						{ }
 								;
 
 VAR_DECLARATION		: TYPE  VAR { printf("%s", yylval.var_name); } HAS_ASSIGNMENT SEMICOLON { printf(";\n"); }
-					| TYPE  COLON_ARRAY VAR { printf("%s", yylval.var_name);} HAS_ASSIGNMENT SEMICOLON { printf(";\n"); }
+					| TYPE  COLON_ARRAY VAR { printf("%s", yylval.var_name);} HAS_ASSIGNMENT SEMICOLON { printf(";\n"); } // shift/reduce
 					;
 
-COLON_ARRAY			: LB NUMARRAY RB  COLON_ARRAY  
-					|  LB RB  {bracket_counter++;} COLON_ARRAY 
+//VAR_ASSIGNATION	: VAR { printf("%s", yylval.var_name); } ASSIGNMENT { printf(" = "); } EXPRESION SEMICOLON { printf(";\n"); }
+								//;
+
+COLON_ARRAY			: LB NUMARRAY RB  COLON_ARRAY
+					|  LB RB  {bracket_counter++;} COLON_ARRAY
 					| /* */
 					;
-
 
 IF_STATEMENT		: IF LP { printf("if ("); } EXPRESION RP LC { printf(") {"); } STATEMENTS RC { printf("}"); } ELSE_VARIATIONS
 								;
@@ -81,8 +84,22 @@ ELSE_VARIATIONS		: ELSE LC { printf(" else {"); } STATEMENTS RC { printf("}"); }
 									| /* */ { printf("\n"); }
 									;
 
-NUMARRAY			: NUMBER   {printf("[%s]", yylval.var_name);} 
-					| VAR { printf("[%s]", yylval.var_name); } 
+FOR_LOOP	: FOR LP { printf("for ("); } FOR_PARAMS RP LC { printf(") {"); } STATEMENTS RC { printf("}\n"); }
+					;
+
+FOR_PARAMS	: DECL_EXPR SEMICOLON { printf("; "); } DECL_EXPR SEMICOLON { printf("; "); } EXPRESION
+						| TYPE VAR COLON { printf("%s", yylval.var_name); } { printf(" : "); } VAR { printf("%s", yylval.var_name); }// shift/reduce
+						;
+
+DECL_EXPR	: EXPRESION
+					| TYPE VAR { printf("%s", yylval.var_name);} HAS_ASSIGNMENT
+					| VAR { printf("%s", yylval.var_name); } HAS_ASSIGNMENT//ASSIGNMENT { printf(" = "); } EXPRESION
+					| /* */  { }
+          ;
+
+
+NUMARRAY			: NUMBER   {printf("[%s]", yylval.var_name);}
+					| VAR { printf("[%s]", yylval.var_name); }
 					;
 
 HAS_ASSIGNMENT		: ASSIGNMENT { printf(" = "); } EXPRESION
@@ -117,10 +134,13 @@ EXPRESION			: EXPRESION LAND {printf("&&");} EXPRESION
 					| EXPRESION DIV {printf("/");} EXPRESION
 					| EXPRESION MOD {printf("%%");} EXPRESION
 					| LP { printf("("); } EXPRESION RP { printf(")"); }
+					| EXPRESION PLUS PLUS { printf("++"); }
+					| EXPRESION MINUS MINUS { printf("--"); }
 					| TERMINAL
+					| VAR { printf("[%s]", yylval.var_name); }
 					;
 
-EXPRESION_ARRAY		: NEW TYPE_NO_PRINT COLON_ARRAY {bracket_counter=0;} 
+EXPRESION_ARRAY		: NEW TYPE_NO_PRINT COLON_ARRAY {bracket_counter=0;}
 					|{for(;bracket_counter>0;bracket_counter--)printf("[]");}LC { printf("= {"); } EXPRESION_ARRAY_INITIALIZE RC { printf("} "); }
 
 EXPRESION_ARRAY_INITIALIZE		: TERMINAL COMA { printf(","); } EXPRESION_ARRAY_INITIALIZE
@@ -130,11 +150,11 @@ EXPRESION_ARRAY_INITIALIZE		: TERMINAL COMA { printf(","); } EXPRESION_ARRAY_INI
 					| /* */
 					;
 
-TYPE_NO_PRINT		: INT 
+TYPE_NO_PRINT		: INT
 					| CHAR
-					| FLOAT 
+					| FLOAT
 					| DOUBLE
-					| STRING 
+					| STRING
 					| BOOLEAN
 					;
 
