@@ -22,6 +22,12 @@
 	char var_list[MAX_VARIABLES][MAX_NAME_LEN];	// MAX_VARIABLES variable names with each variable being atmost MAX_NAME_LEN characters long
 	int string_or_var[MAX_VARIABLES];
 	//extern int *yytext;
+
+	// functions
+	void print_init(){
+		printf("#include <iostream>\n#include <string>\n\nusing namespace std;\n\n");
+	}
+
 %}
 
 %union{
@@ -31,7 +37,7 @@ char var_name[MAX_NAME_LEN];
 
 %token VAR
 %token LAND LOR GEQ LEQ NOT GT LT NEQ DEQ PLUS MINUS MUL DIV MOD ASSIGNMENT EX
-%token MAIN_METHOD MAIN_CLASS IF ELSE ELSEIF WHILE FOR CLASS STATIC PUBLIC PRIVATE VOID PRINTLN NEW
+%token MAIN_METHOD MAIN_CLASS IF ELSE ELSEIF WHILE FOR CLASS STATIC PUBLIC PRIVATE VOID PRINTLN PRINT NEW
 %token BOOL_VAL NUMBER QUOTED_STRING QUOTED_CHAR
 %token LP RP LC RC LB RB COMA SEMICOLON COLON QM SQ DQ
 %token ILCOMMENT MLCOMMENT
@@ -52,7 +58,7 @@ char var_name[MAX_NAME_LEN];
 
 %%
 
-program		: MAIN_CLASS LC { printf("start Main\n"); } STATEMENTS RC { printf("\nend Main\n"); exit(0); }
+program		: {print_init();} MAIN_CLASS LC { printf("start Main\n"); } STATEMENTS RC { printf("\nend Main\n"); exit(0); }
 					| /* Empty file */								{ printf("\n"); exit(2); }
 					;
 
@@ -61,8 +67,13 @@ STATEMENTS			: METHODS STATEMENTS		{ }
 								|	COMMENT STATEMENTS { }
 								| IF_STATEMENT STATEMENTS { }
 								| FOR_LOOP STATEMENTS { }
+								| STDIO STATEMENTS { }
 								| /* */						{ }
 								;
+
+STDIO		: PRINTLN { printf("std::cout"); } LP {printf(" << ");} EXPRESION RP {printf(" <<  std::endl");} SEMICOLON { printf(";\n"); }
+				| PRINT { printf("std::cout"); } LP {printf(" << ");} EXPRESION RP SEMICOLON { printf(";\n"); }
+				;
 
 VAR_DECLARATION		: TYPE  VAR { printf("%s", yylval.var_name); } HAS_ASSIGNMENT SEMICOLON { printf(";\n"); }
 					| TYPE  COLON_ARRAY VAR { printf("%s", yylval.var_name);} HAS_ASSIGNMENT SEMICOLON { printf(";\n"); } // shift/reduce
@@ -112,15 +123,15 @@ METHODS		: SCOPE STATIC TYPE VAR LP { printf("( "); } PARAMS RP { printf(") "); 
 					;
 
 SCOPE		: PUBLIC | PRIVATE | /* */
-PARAMS		: HAS_PARAMS PARAMS
-			| COMA {printf(",");}  HAS_PARAMS
-			| /* No parameters */		{ printf(" "); }
-					;
+PARAMS	: HAS_PARAMS PARAMS
+				| COMA {printf(",");}  HAS_PARAMS
+				| /* No parameters */		{ printf(" "); }
+				;
 
 
-HAS_PARAMS			: TYPE VAR { printf("%s", yylval.var_name); } 
-					| TYPE  COLON_ARRAY VAR {for(;bracket_counter>0;bracket_counter--)printf("*");printf("%s", yylval.var_name);} 
-					| /* */								
+HAS_PARAMS	: TYPE VAR { printf("%s", yylval.var_name); }
+						| TYPE  COLON_ARRAY VAR {for(;bracket_counter>0;bracket_counter--)printf("*");printf("%s", yylval.var_name);}
+						| /* */
 						;
 
 EXPRESION			: EXPRESION LAND {printf("&&");} EXPRESION

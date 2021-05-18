@@ -23,7 +23,7 @@
 "public static void main(String[] args)"							{return MAIN_METHOD;}
 "public class Main"               {return MAIN_CLASS;}
 
-"new"								{return NEW;}
+"new"									{return NEW;}
 "if"								  {return IF;}
 "else"								{return ELSE;}
 "else"[ ]+"if"        {return ELSEIF;}
@@ -35,7 +35,8 @@
 "public"              {return PUBLIC;}
 "private"             {return PRIVATE;}
 "void"                {return VOID;}
-"Sysem.out.println"   {return PRINTLN;}
+"System.out.println"   {return PRINTLN;}
+"System.out.print"	    {return PRINT;}
 
 ":"										{return COLON;}
 "?"										{return QM;}
