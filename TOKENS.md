@@ -34,6 +34,8 @@
 | RB        	| Right square bracket symbol 	| ]           	| ]          	|
 | COMA      	| Coma symbol                 	| ,           	| ,          	|
 | SEMICOLON 	| Semicolon symbol            	| ;           	| ;          	|
+| COLON 	    | Colon symbol                 	| :           	| :         	|
+| QM        	| Question mark symbol         	| ?           	| ?          	|
 | SQ        	| Single quote symbol         	| '           	| '          	|
 | DQ        	| Double quote symbol         	| "           	| "          	|
 

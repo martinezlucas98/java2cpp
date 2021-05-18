@@ -33,7 +33,7 @@ char var_name[MAX_NAME_LEN];
 %token LAND LOR GEQ LEQ NOT GT LT NEQ DEQ PLUS MINUS MUL DIV MOD ASSIGNMENT EX
 %token MAIN_METHOD MAIN_CLASS IF ELSE ELSEIF WHILE FOR CLASS STATIC PUBLIC PRIVATE VOID PRINTLN NEW
 %token BOOL_VAL NUMBER QUOTED_STRING QUOTED_CHAR
-%token LP RP LC RC LB RB COMA SEMICOLON SQ DQ
+%token LP RP LC RC LB RB COMA SEMICOLON COLON QM SQ DQ
 %token ILCOMMENT MLCOMMENT
 
 %left LAND LOR GEQ LEQ NOT GT LT NEQ DEQ PLUS MINUS MUL DIV MOD
@@ -59,6 +59,7 @@ program		: MAIN_CLASS LC { printf("start Main\n"); } STATEMENTS RC { printf("\ne
 STATEMENTS			: METHODS STATEMENTS		{ }
 								| VAR_DECLARATION STATEMENTS		{ }
 								|	COMMENT STATEMENTS { }
+								| IF_STATEMENT { }
 								| /* */						{ }
 								;
 
@@ -70,6 +71,15 @@ COLON_ARRAY			: LB NUMARRAY RB  COLON_ARRAY
 					|  LB RB  {bracket_counter++;} COLON_ARRAY 
 					| /* */
 					;
+
+
+IF_STATEMENT		: IF LP { printf("if ("); } EXPRESION RP LC { printf(") {"); } STATEMENTS RC { printf("}"); } ELSE_VARIATIONS
+								;
+
+ELSE_VARIATIONS		: ELSE LC { printf(" else {"); } STATEMENTS RC { printf("}"); }
+									| ELSEIF LP { printf(" else if ("); } EXPRESION RP { printf(")"); } LC { printf(") {"); } STATEMENTS RC { printf("}"); } ELSE_VARIATIONS
+									| /* */ { printf("\n"); }
+									;
 
 NUMARRAY			: NUMBER   {printf("[%s]", yylval.var_name);} 
 					| VAR { printf("[%s]", yylval.var_name); } 
@@ -145,6 +155,7 @@ TERMINAL	: NUMBER { printf("%s", yylval.var_name); }
 COMMENT	: ILCOMMENT		{ printf("%s\n", yylval.var_name); }
 				| MLCOMMENT		{ printf("%s", yylval.var_name); } // falta poner entre los metodos antes y despues del { } creo con POSSIBLE_COMMENT cpaz
 				;
+
 
 %%
 
