@@ -70,138 +70,143 @@ char var_name[MAX_NAME_LEN];
 
 %%
 
-program		: {print_init();} MAIN_CLASS LC { printf("/* start Main Class */\n"); } STATEMENTS RC { printf("\n/* end Main Class */\n"); exit(0); }
-					| /* Empty file */								{ printf("\n"); exit(2); }
-					;
+program		: { print_init(); } MAIN_CLASS LC { printf("/* start Main Class */\n"); } STATEMENTS RC { printf("\n/* end Main Class */\n"); exit(0); }
+			| /* Empty file */	{ printf("\n"); exit(2); }
+			;
 
-STATEMENTS			: { print_tabs(); } METHODS STATEMENTS		{ }
-								| { print_tabs(); } VAR_DECLARATION STATEMENTS		{ }
-								| { print_tabs(); }COMMENT STATEMENTS { }
-								| { print_tabs(); } IF_STATEMENT STATEMENTS { }
-								| { print_tabs(); } FOR_LOOP STATEMENTS { }
-								| { print_tabs(); } STDIO STATEMENTS { }
-								| /* */						{ }
-								;
+STATEMENTS	: { print_tabs(); } METHODS STATEMENTS { }
+			| { print_tabs(); } VAR_DECLARATION STATEMENTS { }
+			| { print_tabs(); }COMMENT STATEMENTS { }
+			| { print_tabs(); } IF_STATEMENT STATEMENTS { }
+			| { print_tabs(); } FOR_LOOP STATEMENTS { }
+			| { print_tabs(); } STDIO STATEMENTS { }
+			| /* */	{ }
+			;
 
-STDIO		: PRINTLN { printf("std::cout"); } LP {printf(" << ");} EXPRESION RP {printf(" <<  std::endl");} SEMICOLON { printf(";\n"); }
-				| PRINT { printf("std::cout"); } LP {printf(" << ");} EXPRESION RP SEMICOLON { printf(";\n"); }
+STDIO	: PRINTLN { printf("std::cout"); } LP { printf(" << "); } EXPRESION RP { printf(" <<  std::endl"); } SEMICOLON { printf(";\n"); }
+		| PRINT { printf("std::cout"); } LP { printf(" << "); } EXPRESION RP SEMICOLON { printf(";\n"); }
+		;
+
+VAR_DECLARATION	: TYPE  VAR { printf("%s", yylval.var_name); } HAS_ASSIGNMENT SEMICOLON { printf(";\n"); }
+				| TYPE  COLON_ARRAY VAR { printf("%s", yylval.var_name); } HAS_ASSIGNMENT SEMICOLON { printf(";\n"); } // shift/reduce
 				;
-
-VAR_DECLARATION		: TYPE  VAR { printf("%s", yylval.var_name); } HAS_ASSIGNMENT SEMICOLON { printf(";\n"); }
-					| TYPE  COLON_ARRAY VAR { printf("%s", yylval.var_name);} HAS_ASSIGNMENT SEMICOLON { printf(";\n"); } // shift/reduce
-					;
 
 //VAR_ASSIGNATION	: VAR { printf("%s", yylval.var_name); } ASSIGNMENT { printf(" = "); } EXPRESION SEMICOLON { printf(";\n"); }
 								//;
 
-COLON_ARRAY			: LB NUMARRAY RB  COLON_ARRAY
-					|  LB RB  {bracket_counter++;} COLON_ARRAY
-					| /* */
-					;
+COLON_ARRAY	: LB NUMARRAY RB  COLON_ARRAY
+			|  LB RB  { bracket_counter++; } COLON_ARRAY
+			| /* */
+			;
 
-IF_STATEMENT		: IF LP { printf("if ("); } EXPRESION RP LC { tab_counter++; printf(") {\n"); } STATEMENTS RC { tab_counter--; print_tabs(); printf("}"); } ELSE_VARIATIONS
-								;
+IF_STATEMENT	: IF LP { printf("if ("); } EXPRESION RP LC { tab_counter++; printf(") {\n"); } STATEMENTS RC { tab_counter--; print_tabs(); printf("}"); } ELSE_VARIATIONS
+				;
 
-ELSE_VARIATIONS		: ELSE LC { tab_counter++; printf(" else {\n"); } STATEMENTS RC { tab_counter--; print_tabs(); printf("}"); }
-									| ELSEIF LP { printf(" else if ("); } EXPRESION RP { printf(")"); } LC { tab_counter++; printf(") {\n"); } STATEMENTS RC { tab_counter--;print_tabs(); printf("}"); } ELSE_VARIATIONS
-									| /* */ { printf("\n"); }
-									;
+ELSE_VARIATIONS	: ELSE LC { tab_counter++; printf(" else {\n"); } STATEMENTS RC { tab_counter--; print_tabs(); printf("}"); }
+				| ELSEIF LP { printf(" else if ("); } EXPRESION RP { printf(")"); } LC { tab_counter++; printf(") {\n"); } STATEMENTS RC { tab_counter--;print_tabs(); printf("}"); } ELSE_VARIATIONS
+				| /* */ { printf("\n"); }
+				;
 
-FOR_LOOP	: FOR LP { printf("for ("); } FOR_PARAMS RP LC { tab_counter++; printf(") {\n"); } STATEMENTS RC { tab_counter--; print_tabs(); printf("}\n");}
-					;
+FOR_LOOP	: FOR LP { printf("for ("); } FOR_PARAMS RP LC { tab_counter++; printf(") {\n"); } STATEMENTS RC { tab_counter--; print_tabs(); printf("}\n"); }
+			;
 
 FOR_PARAMS	: DECL_EXPR SEMICOLON { printf("; "); } DECL_EXPR SEMICOLON { printf("; "); } EXPRESION
-						| TYPE VAR COLON { printf("%s", yylval.var_name); } { printf(" : "); } VAR { printf("%s", yylval.var_name); }// shift/reduce
-						;
+			| TYPE VAR COLON { printf("%s", yylval.var_name); } { printf(" : "); } VAR { printf("%s", yylval.var_name); }// shift/reduce
+			;
 
 DECL_EXPR	: EXPRESION
-					| TYPE VAR { printf("%s", yylval.var_name);} HAS_ASSIGNMENT
-					| VAR { printf("%s", yylval.var_name); } HAS_ASSIGNMENT//ASSIGNMENT { printf(" = "); } EXPRESION
-					| /* */  { }
-          ;
+			| TYPE VAR { printf("%s", yylval.var_name); } HAS_ASSIGNMENT
+			| VAR { printf("%s", yylval.var_name); } HAS_ASSIGNMENT//ASSIGNMENT { printf(" = "); } EXPRESION
+			| /* */  { }
+        	;
 
 
-NUMARRAY			: NUMBER   {printf("[%s]", yylval.var_name);}
-					| VAR { printf("[%s]", yylval.var_name); }
-					;
+NUMARRAY	: NUMBER   { printf("[%s]", yylval.var_name); }
+			| VAR { printf("[%s]", yylval.var_name); }
+			;
 
-HAS_ASSIGNMENT		: ASSIGNMENT { printf(" = "); } EXPRESION
-					| ASSIGNMENT EXPRESION_ARRAY
-					| /* No assignment */ {}
-					;
-
-METHODS		: SCOPE STATIC TYPE VAR LP { printf("( "); } PARAMS RP { printf(") "); } LC	{ tab_counter++; printf("{\n"); } STATEMENTS RC { printf("}\n"); tab_counter--; }	{ }//printf("static %s %s ( %s ) {", current_data_type, ); }
-					| MAIN_METHOD { printf("int main(int argc, char **argv)"); } LC { tab_counter++; printf("{\n");} STATEMENTS RC { printf("\n}\n"); tab_counter--; }
-					;
-
-SCOPE		: PUBLIC | PRIVATE | /* */
-PARAMS	: HAS_PARAMS PARAMS
-				| COMA {printf(",");}  HAS_PARAMS
-				| /* No parameters */		{ printf(" "); }
+HAS_ASSIGNMENT	: ASSIGNMENT { printf(" = "); } EXPRESION
+				| ASSIGNMENT EXPRESION_ARRAY
+				| /* No assignment */ {}
 				;
+
+METHODS	: SCOPE STATIC TYPE VAR LP { printf("( "); } PARAMS RP { printf(") "); } LC	{ tab_counter++; printf("{\n"); } STATEMENTS RC { printf("}\n"); tab_counter--; }	{ }//printf("static %s %s ( %s ) {", current_data_type, ); }
+		| MAIN_METHOD { printf("int main(int argc, char **argv)"); } LC { tab_counter++; printf("{\n"); } STATEMENTS RC { printf("\n}\n"); tab_counter--; }
+		;
+
+SCOPE	: PUBLIC
+		| PRIVATE 
+		| /* */
+		;
+
+PARAMS	: HAS_PARAMS PARAMS
+		| COMA { printf(","); }  HAS_PARAMS
+		| /* No parameters */		{ printf(" "); }
+		;
 
 
 HAS_PARAMS	: TYPE VAR { printf("%s", yylval.var_name); }
-						| TYPE  COLON_ARRAY VAR {for(;bracket_counter>0;bracket_counter--)printf("*");printf("%s", yylval.var_name);}
-						| /* */
-						;
+			| TYPE  COLON_ARRAY VAR { for(;bracket_counter>0;bracket_counter--)printf("*");printf("%s", yylval.var_name); }
+			| /* */
+			;
 
-EXPRESION			: EXPRESION LAND {printf("&&");} EXPRESION
-					| EXPRESION LOR {printf("||");} EXPRESION
-		 			| EXPRESION LEQ {printf("<=");} EXPRESION
-					| EXPRESION GT {printf(">");} EXPRESION
-					| EXPRESION LT {printf("<");} EXPRESION
-					| EXPRESION NEQ {printf("!=");} EXPRESION
-					| EXPRESION DEQ {printf("==");} EXPRESION
-					| NOT {printf("!");} EXPRESION
-					| EXPRESION PLUS {printf("+");} EXPRESION
-					| EXPRESION MINUS {printf("-");} EXPRESION
-					| EXPRESION MUL {printf("*");} EXPRESION
-					| EXPRESION DIV {printf("/");} EXPRESION
-					| EXPRESION MOD {printf("%%");} EXPRESION
-					| LP { printf("("); } EXPRESION RP { printf(")"); }
-					| EXPRESION PLUS PLUS { printf("++"); }
-					| EXPRESION MINUS MINUS { printf("--"); }
-					| TERMINAL
-					| VAR { printf("[%s]", yylval.var_name); }
-					;
+EXPRESION	: EXPRESION LAND { printf("&&"); } EXPRESION
+			| EXPRESION LOR { printf("||"); } EXPRESION
+			| EXPRESION LEQ { printf("<="); } EXPRESION
+			| EXPRESION GT { printf(">"); } EXPRESION
+			| EXPRESION LT { printf("<"); } EXPRESION
+			| EXPRESION NEQ { printf("!="); } EXPRESION
+			| EXPRESION DEQ { printf("=="); } EXPRESION
+			| NOT { printf("!"); } EXPRESION
+			| EXPRESION PLUS { printf("+"); } EXPRESION
+			| EXPRESION MINUS { printf("-"); } EXPRESION
+			| EXPRESION MUL { printf("*"); } EXPRESION
+			| EXPRESION DIV { printf("/"); } EXPRESION
+			| EXPRESION MOD { printf("%%"); } EXPRESION
+			| LP { printf("("); } EXPRESION RP { printf(")"); }
+			| EXPRESION PLUS PLUS { printf("++"); }
+			| EXPRESION MINUS MINUS { printf("--"); }
+			| TERMINAL
+			| VAR { printf("[%s]", yylval.var_name); }
+			;
 
-EXPRESION_ARRAY		: NEW TYPE_NO_PRINT COLON_ARRAY {bracket_counter=0;}
-					|{for(;bracket_counter>0;bracket_counter--)printf("[]");}LC { printf("= {"); } EXPRESION_ARRAY_INITIALIZE RC { printf("} "); }
+EXPRESION_ARRAY	: NEW TYPE_NO_PRINT COLON_ARRAY {bracket_counter=0;}
+				| { for(;bracket_counter>0;bracket_counter--)printf("[]"); } LC { printf(" = {"); } EXPRESION_ARRAY_INITIALIZE RC { printf("}"); }
+				;
 
-EXPRESION_ARRAY_INITIALIZE		: TERMINAL COMA { printf(","); } EXPRESION_ARRAY_INITIALIZE
-					| COMA { printf(","); }  LC { printf("{"); } EXPRESION_ARRAY_INITIALIZE RC { printf("}"); }  EXPRESION_ARRAY_INITIALIZE
-					|  LC { printf("{"); } EXPRESION_ARRAY_INITIALIZE RC { printf("} "); } EXPRESION_ARRAY_INITIALIZE
-					| TERMINAL
-					| /* */
-					;
+EXPRESION_ARRAY_INITIALIZE	: TERMINAL COMA { printf(","); } EXPRESION_ARRAY_INITIALIZE
+							| COMA { printf(","); } LC { printf("{"); } EXPRESION_ARRAY_INITIALIZE RC { printf("}"); } EXPRESION_ARRAY_INITIALIZE
+							|  LC { printf("{"); } EXPRESION_ARRAY_INITIALIZE RC { printf("}"); } EXPRESION_ARRAY_INITIALIZE
+							| TERMINAL
+							| /* */
+							;
 
-TYPE_NO_PRINT		: INT
-					| CHAR
-					| FLOAT
-					| DOUBLE
-					| STRING
-					| BOOLEAN
-					;
+TYPE_NO_PRINT	: INT
+				| CHAR
+				| FLOAT
+				| DOUBLE
+				| STRING
+				| BOOLEAN
+				;
 
-TYPE			: INT { $$=$1; current_data_type=$1;	printf("int "); }
-					| CHAR  { $$=$1; current_data_type=$1; printf("char "); }
-					| FLOAT { $$=$1; current_data_type=$1; printf("float "); }
-					| DOUBLE { $$=$1; current_data_type=$1; printf("double "); }
-					| STRING { $$=$1; current_data_type=$1; printf("string "); }
-					| BOOLEAN { $$=$1; current_data_type=$1; printf("bool "); }
-					| VOID {printf("void "); }
-					;
+TYPE	: INT { $$=$1; current_data_type=$1;	printf("int "); }
+		| CHAR  { $$=$1; current_data_type=$1; printf("char "); }
+		| FLOAT { $$=$1; current_data_type=$1; printf("float "); }
+		| DOUBLE { $$=$1; current_data_type=$1; printf("double "); }
+		| STRING { $$=$1; current_data_type=$1; printf("string "); }
+		| BOOLEAN { $$=$1; current_data_type=$1; printf("bool "); }
+		| VOID { printf("void "); }
+		;
 
 TERMINAL	: NUMBER { printf("%s", yylval.var_name); }
-					| QUOTED_CHAR { printf("%s", yylval.var_name); }
-					| QUOTED_STRING { printf("%s", yylval.var_name); }
-					| BOOL_VAL { printf("%s", yylval.var_name); }
-					;
+			| QUOTED_CHAR { printf("%s", yylval.var_name); }
+			| QUOTED_STRING { printf("%s", yylval.var_name); }
+			| BOOL_VAL { printf("%s", yylval.var_name); }
+			;
 
 COMMENT	: ILCOMMENT		{ printf("%s\n", yylval.var_name); }
-				| MLCOMMENT		{ printf("%s", yylval.var_name); } // falta poner entre los metodos antes y despues del { } creo con POSSIBLE_COMMENT cpaz
-				;
+		| MLCOMMENT		{ printf("%s", yylval.var_name); } // falta poner entre los metodos antes y despues del { } creo con POSSIBLE_COMMENT cpaz
+		;
 
 
 %%
