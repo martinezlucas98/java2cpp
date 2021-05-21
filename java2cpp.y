@@ -2,6 +2,7 @@
 	#include<stdio.h>
 	#include<stdlib.h>
 	#include<string.h>
+	#include<time.h>
 	#define MAX_NAME_LEN 32
 	#define MAX_VARIABLES 32
 	int yylex(void);
@@ -13,7 +14,7 @@
 	int temp;
 	int idx = 0;
 	int table_idx = 0;
-	int tab_count = 0;
+	int tab_counter = 0;
 	char for_var[MAX_NAME_LEN];
 	struct symbol_table{char var_name[MAX_NAME_LEN]; int type;} sym[MAX_VARIABLES];
 	extern int lookup_in_table(char var[MAX_NAME_LEN]);
@@ -58,16 +59,16 @@ char var_name[MAX_NAME_LEN];
 
 %%
 
-program		: {print_init();} MAIN_CLASS LC { printf("start Main\n"); } STATEMENTS RC { printf("\nend Main\n"); exit(0); }
+program		: {print_init();} MAIN_CLASS LC { printf("/* start Main Class */\n"); } STATEMENTS RC { printf("\n/* end Main Class */\n"); exit(0); }
 					| /* Empty file */								{ printf("\n"); exit(2); }
 					;
 
-STATEMENTS			: METHODS STATEMENTS		{ }
-								| VAR_DECLARATION STATEMENTS		{ }
-								|	COMMENT STATEMENTS { }
-								| IF_STATEMENT STATEMENTS { }
-								| FOR_LOOP STATEMENTS { }
-								| STDIO STATEMENTS { }
+STATEMENTS			: { print_tabs(); } METHODS STATEMENTS		{ }
+								| { print_tabs(); } VAR_DECLARATION STATEMENTS		{ }
+								| { print_tabs(); }COMMENT STATEMENTS { }
+								| { print_tabs(); } IF_STATEMENT STATEMENTS { }
+								| { print_tabs(); } FOR_LOOP STATEMENTS { }
+								| { print_tabs(); } STDIO STATEMENTS { }
 								| /* */						{ }
 								;
 
@@ -87,15 +88,15 @@ COLON_ARRAY			: LB NUMARRAY RB  COLON_ARRAY
 					| /* */
 					;
 
-IF_STATEMENT		: IF LP { printf("if ("); } EXPRESION RP LC { printf(") {"); } STATEMENTS RC { printf("}"); } ELSE_VARIATIONS
+IF_STATEMENT		: IF LP { printf("if ("); } EXPRESION RP LC { tab_counter++; printf(") {\n"); } STATEMENTS RC { tab_counter--; print_tabs(); printf("}"); } ELSE_VARIATIONS
 								;
 
-ELSE_VARIATIONS		: ELSE LC { printf(" else {"); } STATEMENTS RC { printf("}"); }
-									| ELSEIF LP { printf(" else if ("); } EXPRESION RP { printf(")"); } LC { printf(") {"); } STATEMENTS RC { printf("}"); } ELSE_VARIATIONS
+ELSE_VARIATIONS		: ELSE LC { tab_counter++; printf(" else {\n"); } STATEMENTS RC { tab_counter--; print_tabs(); printf("}"); }
+									| ELSEIF LP { printf(" else if ("); } EXPRESION RP { printf(")"); } LC { tab_counter++; printf(") {\n"); } STATEMENTS RC { tab_counter--;print_tabs(); printf("}"); } ELSE_VARIATIONS
 									| /* */ { printf("\n"); }
 									;
 
-FOR_LOOP	: FOR LP { printf("for ("); } FOR_PARAMS RP LC { printf(") {"); } STATEMENTS RC { printf("}\n"); }
+FOR_LOOP	: FOR LP { printf("for ("); } FOR_PARAMS RP LC { tab_counter++; printf(") {\n"); } STATEMENTS RC { tab_counter--; print_tabs(); printf("}\n");}
 					;
 
 FOR_PARAMS	: DECL_EXPR SEMICOLON { printf("; "); } DECL_EXPR SEMICOLON { printf("; "); } EXPRESION
@@ -118,8 +119,8 @@ HAS_ASSIGNMENT		: ASSIGNMENT { printf(" = "); } EXPRESION
 					| /* No assignment */ {}
 					;
 
-METHODS		: SCOPE STATIC TYPE VAR LP { printf("( "); } PARAMS RP { printf(") "); } LC	{ printf("{\n"); } STATEMENTS RC { printf("}\n"); }	{ }//printf("static %s %s ( %s ) {", current_data_type, ); }
-					| MAIN_METHOD { printf("int main(int argc, char **argv)"); } LC {printf("{\n");} STATEMENTS RC {printf("\n}\n");}
+METHODS		: SCOPE STATIC TYPE VAR LP { printf("( "); } PARAMS RP { printf(") "); } LC	{ tab_counter++; printf("{\n"); } STATEMENTS RC { printf("}\n"); tab_counter--; }	{ }//printf("static %s %s ( %s ) {", current_data_type, ); }
+					| MAIN_METHOD { printf("int main(int argc, char **argv)"); } LC { tab_counter++; printf("{\n");} STATEMENTS RC { printf("\n}\n"); tab_counter--; }
 					;
 
 SCOPE		: PUBLIC | PRIVATE | /* */
@@ -176,7 +177,7 @@ TYPE			: INT { $$=$1; current_data_type=$1;	printf("int "); }
 					| CHAR  { $$=$1; current_data_type=$1; printf("char "); }
 					| FLOAT { $$=$1; current_data_type=$1; printf("float "); }
 					| DOUBLE { $$=$1; current_data_type=$1; printf("double "); }
-					| STRING { $$=$1; current_data_type=$1; printf("String "); }
+					| STRING { $$=$1; current_data_type=$1; printf("string "); }
 					| BOOLEAN { $$=$1; current_data_type=$1; printf("bool "); }
 					| VOID {printf("void "); }
 					;
@@ -221,7 +222,7 @@ void insert_to_table(char var[MAX_NAME_LEN], int type)
 }
 
 void print_tabs() {
-	for(int i = 0; i < tab_count; i++){
+	for(int i = 0; i < tab_counter; i++){
 		printf("\t");
 	}
 	return;
