@@ -26,6 +26,17 @@
 
 	// functions
 	void print_init(){
+		time_t t = time(NULL);
+  		struct tm now = *localtime(&t);
+		char *version = "alpha";
+		char *github = "https://github.com/martinezlucas98/java2cpp";
+
+		printf("/*\n*\t===================================================================\n");
+		printf("*\tTranslated from java to c++ using java2cpp\n");
+		printf("*\tVersion: %s\n", version);
+		printf("*\tGithub: %s\n", github);
+		printf("*\tTranslated on: %d-%02d-%02d %02d:%02d:%02d (yyyy-MM-dd hh:mm:ss)\n", now.tm_year + 1900, now.tm_mon + 1, now.tm_mday, now.tm_hour, now.tm_min, now.tm_sec);
+		printf("*\t===================================================================\n*/\n\n");
 		printf("#include <iostream>\n#include <string>\n\nusing namespace std;\n\n");
 	}
 
