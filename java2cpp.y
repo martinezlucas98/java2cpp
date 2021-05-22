@@ -106,6 +106,10 @@ ELSE_VARIATIONS	: ELSE LC { tab_counter++; printf(" else {\n"); } STATEMENTS RC 
 				| ELSEIF LP { printf(" else if ("); } EXPRESION RP { printf(")"); } LC { tab_counter++; printf(") {\n"); } STATEMENTS RC { tab_counter--;print_tabs(); printf("}"); } ELSE_VARIATIONS
 				| /* */ { printf("\n"); }
 				;
+				
+WHILE_LOOP      : WHILE LP {printf("while ("); } DECL_EXPR RP LC { tab_counter++; printf("){\n"); } STATEMENTS RC { tab_counter--; print_tabs(); printf("}\n"); }
+                           ;
+
 
 FOR_LOOP	: FOR LP { printf("for ("); } FOR_PARAMS RP LC { tab_counter++; printf(") {\n"); } STATEMENTS RC { tab_counter--; print_tabs(); printf("}\n"); }
 			;
