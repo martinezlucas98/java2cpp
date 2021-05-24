@@ -124,6 +124,9 @@ DECL_EXPR	: EXPRESION
 			| /* */  { }
         	;
 
+DO_WHILE_LOOP   : DO RP { printf("do{\n"); } STATEMENTS RC WHILE LP {tab_counter--; print_tabs(); printf("}while("); } DECL_EXPR RP { printf(")"); } 
+                ;
+
 
 NUMARRAY	: NUMBER   { printf("[%s]", yylval.var_name); }
 			| VAR { printf("[%s]", yylval.var_name); }
