@@ -49,7 +49,7 @@ char var_name[MAX_NAME_LEN];
 
 %token VAR
 %token LAND LOR GEQ LEQ NOT GT LT NEQ DEQ PLUS MINUS MUL DIV MOD ASSIGNMENT EX
-%token MAIN_METHOD MAIN_CLASS IF ELSE ELSEIF WHILE FOR CLASS STATIC PUBLIC PRIVATE VOID PRINTLN PRINT NEW
+%token MAIN_METHOD MAIN_CLASS IF ELSE ELSEIF WHILE FOR CLASS STATIC PUBLIC PRIVATE VOID PRINTLN PRINT NEW DO
 %token BOOL_VAL NUMBER QUOTED_STRING QUOTED_CHAR
 %token LP RP LC RC LB RB COMA SEMICOLON COLON QM SQ DQ
 %token ILCOMMENT MLCOMMENT
@@ -79,6 +79,8 @@ STATEMENTS	: { print_tabs(); } METHODS STATEMENTS { }
 			| { print_tabs(); }COMMENT STATEMENTS { }
 			| { print_tabs(); } IF_STATEMENT STATEMENTS { }
 			| { print_tabs(); } FOR_LOOP STATEMENTS { }
+			| { print_tabs(); } While_LOOP STATEMENTS { }
+			| { print_tabs(); } DO_WHILE_LOOP STATEMENTS { }
 			| { print_tabs(); } STDIO STATEMENTS { }
 			| /* */	{ }
 			;
@@ -124,7 +126,7 @@ DECL_EXPR	: EXPRESION
 			| /* */  { }
         	;
 
-DO_WHILE_LOOP   : DO RP { printf("do{\n"); } STATEMENTS RC WHILE LP {tab_counter--; print_tabs(); printf("}while("); } DECL_EXPR RP { printf(")"); } 
+DO_WHILE_LOOP   : DO LC { printf("do{\n"); } STATEMENTS RC WHILE LP {tab_counter--; print_tabs(); printf("}while("); } DECL_EXPR RP SEMICOLON { printf(");"); } 
                 ;
 
 
