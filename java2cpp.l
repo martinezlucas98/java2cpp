@@ -28,6 +28,7 @@
 "else"								{return ELSE;}
 "else"[ ]+"if"        {return ELSEIF;}
 "for"								  {return FOR;}
+"do"                                                              {return DO;}
 "while"								{return WHILE;}
 
 "class"               {return CLASS;}
