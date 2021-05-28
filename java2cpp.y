@@ -49,7 +49,7 @@ char var_name[MAX_NAME_LEN];
 
 %token VAR
 %token LAND LOR GEQ LEQ NOT GT LT NEQ DEQ PLUS MINUS MUL DIV MOD ASSIGNMENT EX
-%token MAIN_METHOD MAIN_CLASS IF ELSE ELSEIF WHILE FOR CLASS STATIC PUBLIC PRIVATE VOID PRINTLN PRINT NEW
+%token MAIN_METHOD MAIN_CLASS IF ELSE ELSEIF WHILE FOR CLASS STATIC PUBLIC PRIVATE VOID PRINTLN PRINT NEW BREAK RETURN
 %token BOOL_VAL NUMBER QUOTED_STRING QUOTED_CHAR
 %token LP RP LC RC LB RB COMA SEMICOLON COLON QM SQ DQ
 %token ILCOMMENT MLCOMMENT
@@ -76,11 +76,19 @@ program		: { print_init(); } MAIN_CLASS LC { printf("/* start Main Class */\n");
 
 STATEMENTS	: { print_tabs(); } METHODS STATEMENTS { }
 			| { print_tabs(); } VAR_DECLARATION STATEMENTS { }
-			| { print_tabs(); }COMMENT STATEMENTS { }
+			| { print_tabs(); } COMMENT STATEMENTS { }
 			| { print_tabs(); } IF_STATEMENT STATEMENTS { }
 			| { print_tabs(); } FOR_LOOP STATEMENTS { }
 			| { print_tabs(); } STDIO STATEMENTS { }
+			| { print_tabs(); } BREAK_ST STATEMENTS { }
+			| { print_tabs(); } RETURN_ST STATEMENTS { }
 			| /* */	{ }
+			;
+
+RETURN_ST 	: RETURN { printf("return "); } EXPRESION SEMICOLON { printf(";\n"); }
+			;
+
+BREAK_ST	: BREAK SEMICOLON  { printf("break;\n"); }
 			;
 
 STDIO	: PRINTLN { printf("std::cout"); } LP { printf(" << "); } EXPRESION RP { printf(" <<  std::endl"); } SEMICOLON { printf(";\n"); }
