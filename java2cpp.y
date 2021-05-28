@@ -79,7 +79,7 @@ STATEMENTS	: { print_tabs(); } METHODS STATEMENTS { }
 			| { print_tabs(); }COMMENT STATEMENTS { }
 			| { print_tabs(); } IF_STATEMENT STATEMENTS { }
 			| { print_tabs(); } FOR_LOOP STATEMENTS { }
-			| { print_tabs(); } While_LOOP STATEMENTS { }
+			| { print_tabs(); } WHILE_LOOP STATEMENTS { }
 			| { print_tabs(); } DO_WHILE_LOOP STATEMENTS { }
 			| { print_tabs(); } STDIO STATEMENTS { }
 			| /* */	{ }
@@ -126,7 +126,7 @@ DECL_EXPR	: EXPRESION
 			| /* */  { }
         	;
 
-DO_WHILE_LOOP   : DO LC { printf("do{\n"); } STATEMENTS RC WHILE LP {tab_counter--; print_tabs(); printf("}while("); } DECL_EXPR RP SEMICOLON { printf(");"); } 
+DO_WHILE_LOOP   : DO LC { printf("do{\n"); tab_counter++;} STATEMENTS RC WHILE LP {tab_counter--; print_tabs(); printf("}while("); } DECL_EXPR RP SEMICOLON { printf(");"); } 
                 ;
 
 
