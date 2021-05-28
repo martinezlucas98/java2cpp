@@ -49,7 +49,7 @@ char var_name[MAX_NAME_LEN];
 
 %token VAR
 %token LAND LOR GEQ LEQ NOT GT LT NEQ DEQ PLUS MINUS MUL DIV MOD ASSIGNMENT EX
-%token MAIN_METHOD MAIN_CLASS IF ELSE ELSEIF WHILE FOR CLASS STATIC PUBLIC PRIVATE VOID PRINTLN PRINT NEW
+%token MAIN_METHOD MAIN_CLASS IF ELSE ELSEIF WHILE FOR CLASS STATIC PUBLIC PRIVATE VOID PRINTLN PRINT NEW DO
 %token BOOL_VAL NUMBER QUOTED_STRING QUOTED_CHAR
 %token LP RP LC RC LB RB COMA SEMICOLON COLON QM SQ DQ
 %token ILCOMMENT MLCOMMENT
@@ -79,6 +79,8 @@ STATEMENTS	: { print_tabs(); } METHODS STATEMENTS { }
 			| { print_tabs(); }COMMENT STATEMENTS { }
 			| { print_tabs(); } IF_STATEMENT STATEMENTS { }
 			| { print_tabs(); } FOR_LOOP STATEMENTS { }
+			| { print_tabs(); } WHILE_LOOP STATEMENTS { }
+			| { print_tabs(); } DO_WHILE_LOOP STATEMENTS { }
 			| { print_tabs(); } STDIO STATEMENTS { }
 			| /* */	{ }
 			;
@@ -106,6 +108,10 @@ ELSE_VARIATIONS	: ELSE LC { tab_counter++; printf(" else {\n"); } STATEMENTS RC 
 				| ELSEIF LP { printf(" else if ("); } EXPRESION RP { printf(")"); } LC { tab_counter++; printf(") {\n"); } STATEMENTS RC { tab_counter--;print_tabs(); printf("}"); } ELSE_VARIATIONS
 				| /* */ { printf("\n"); }
 				;
+				
+WHILE_LOOP      : WHILE LP {printf("while ("); } DECL_EXPR RP LC { tab_counter++; printf("){\n"); } STATEMENTS RC { tab_counter--; print_tabs(); printf("}\n"); }
+                           ;
+
 
 FOR_LOOP	: FOR LP { printf("for ("); } FOR_PARAMS RP LC { tab_counter++; printf(") {\n"); } STATEMENTS RC { tab_counter--; print_tabs(); printf("}\n"); }
 			;
@@ -119,6 +125,9 @@ DECL_EXPR	: EXPRESION
 			| VAR { printf("%s", yylval.var_name); } HAS_ASSIGNMENT//ASSIGNMENT { printf(" = "); } EXPRESION
 			| /* */  { }
         	;
+
+DO_WHILE_LOOP   : DO LC { printf("do{\n"); tab_counter++;} STATEMENTS RC WHILE LP {tab_counter--; print_tabs(); printf("}while("); } DECL_EXPR RP SEMICOLON { printf(");"); } 
+                ;
 
 
 NUMARRAY	: NUMBER   { printf("[%s]", yylval.var_name); }
