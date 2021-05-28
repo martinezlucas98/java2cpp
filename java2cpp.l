@@ -28,6 +28,7 @@
 "else"								{return ELSE;}
 "else"[ ]+"if"        {return ELSEIF;}
 "for"								  {return FOR;}
+"do"                                                              {return DO;}
 "while"								{return WHILE;}
 
 "class"               {return CLASS;}
@@ -66,6 +67,8 @@
 "Math.pow("[0-9]+(.[0-9]+)?"[ ]*,[ ]*"[0-9]+(.[0-9]+)?")"   {return EX;}
 
 ("true"|"false")              {strcpy(yylval.var_name, yytext);return BOOL_VAL;}
+"break"						{return BREAK;}
+"return"					{return RETURN;}
 
 [$_a-zA-Z]+[$_a-zA-Z0-9]*			{strcpy(yylval.var_name, yytext);return VAR;}
 [0-9]+("."[0-9]+)?            {strcpy(yylval.var_name, yytext);return NUMBER;}
