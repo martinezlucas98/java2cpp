@@ -164,7 +164,7 @@ PARAMS	: HAS_PARAMS PARAMS
 
 
 HAS_PARAMS	: TYPE VAR { printf("%s", yylval.var_name); }
-			| TYPE  COLON_ARRAY VAR { printf("%s", yylval.var_name); for(;bracket_counter>0;bracket_counter--)printf("[%d]",DIMENSION);}
+			| TYPE  COLON_ARRAY VAR { printf("%s", yylval.var_name);printf("[]");bracket_counter-- ;for(;bracket_counter>0;bracket_counter--)printf("[%d]",DIMENSION);}
 			| /* */
 			;
 
