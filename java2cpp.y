@@ -99,14 +99,14 @@ STDIO	: PRINTLN { printf("std::cout"); } LP { printf(" << "); } EXPRESION RP { p
 		;
 
 VAR_DECLARATION	: TYPE  VAR { printf("%s", yylval.var_name); } HAS_ASSIGNMENT SEMICOLON { printf(";\n"); }
-				| TYPE  COLON_ARRAY VAR { printf("%s", yylval.var_name); } HAS_ASSIGNMENT SEMICOLON { printf(";\n"); } // shift/reduce
+				| TYPE  BRACKET_ARRAY VAR { printf("%s", yylval.var_name); } HAS_ASSIGNMENT SEMICOLON { printf(";\n"); } // shift/reduce
 				;
 
 //VAR_ASSIGNATION	: VAR { printf("%s", yylval.var_name); } ASSIGNMENT { printf(" = "); } EXPRESION SEMICOLON { printf(";\n"); }
 								//;
 
-COLON_ARRAY	: LB NUMARRAY RB  COLON_ARRAY
-			|  LB RB  { bracket_counter++; } COLON_ARRAY
+BRACKET_ARRAY	: LB NUMARRAY RB  BRACKET_ARRAY
+			|  LB RB  { bracket_counter++; } BRACKET_ARRAY
 			| /* */
 			;
 
@@ -164,7 +164,7 @@ PARAMS	: HAS_PARAMS PARAMS
 
 
 HAS_PARAMS	: TYPE VAR { printf("%s", yylval.var_name); }
-			| TYPE  COLON_ARRAY VAR { printf("%s", yylval.var_name);printf("[]");bracket_counter-- ;for(;bracket_counter>0;bracket_counter--)printf("[%d]",DIMENSION);}
+			| TYPE  BRACKET_ARRAY VAR { printf("%s", yylval.var_name);printf("[]");bracket_counter-- ;for(;bracket_counter>0;bracket_counter--)printf("[%d]",DIMENSION);}
 			| /* */
 			;
 
@@ -188,7 +188,7 @@ EXPRESION	: EXPRESION LAND { printf("&&"); } EXPRESION
 			| VAR { printf("[%s]", yylval.var_name); }
 			;
 
-EXPRESION_ARRAY	: NEW TYPE_NO_PRINT COLON_ARRAY {bracket_counter=0;}
+EXPRESION_ARRAY	: NEW TYPE_NO_PRINT BRACKET_ARRAY {bracket_counter=0;}
 				| { for(;bracket_counter>0;bracket_counter--)printf("[]"); } LC { printf(" = {"); } EXPRESION_ARRAY_INITIALIZE RC { printf("}"); }
 				;
 
