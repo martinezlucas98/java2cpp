@@ -5,6 +5,7 @@
 	#include<time.h>
 	#define MAX_NAME_LEN 32
 	#define MAX_VARIABLES 32
+	#define DIMENSION 20
 	int yylex(void);
 	int yyerror(const char *s);
 	int success = 1;
@@ -163,7 +164,7 @@ PARAMS	: HAS_PARAMS PARAMS
 
 
 HAS_PARAMS	: TYPE VAR { printf("%s", yylval.var_name); }
-			| TYPE  COLON_ARRAY VAR { for(;bracket_counter>0;bracket_counter--)printf("*");printf("%s", yylval.var_name); }
+			| TYPE  COLON_ARRAY VAR { printf("%s", yylval.var_name); for(;bracket_counter>0;bracket_counter--)printf("[%d]",DIMENSION);}
 			| /* */
 			;
 
