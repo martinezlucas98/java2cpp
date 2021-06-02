@@ -5,6 +5,7 @@
 	#include<time.h>
 	#define MAX_NAME_LEN 32
 	#define MAX_VARIABLES 32
+	#define MAX_SCOPE 32
 	int yylex(void);
 	int yyerror(const char *s);
 	int success = 1;
@@ -16,9 +17,13 @@
 	int table_idx = 0;
 	int tab_counter = 0;
 	char for_var[MAX_NAME_LEN];
+	char stack_scope[MAX_SCOPE][MAX_VARIABLES];
+	int stack_scope_counter=0;
 	struct symbol_table{char var_name[MAX_NAME_LEN]; int type;} sym[MAX_VARIABLES];
 	extern int lookup_in_table(char var[MAX_NAME_LEN]);
 	extern void insert_to_table(char var[MAX_NAME_LEN], int type);
+	extern void push_scope(char var[MAX_NAME_LEN]);
+	extern void pop_scope();
 	extern void print_tabs();
 	char var_list[MAX_VARIABLES][MAX_NAME_LEN];	// MAX_VARIABLES variable names with each variable being atmost MAX_NAME_LEN characters long
 	int string_or_var[MAX_VARIABLES];
@@ -147,8 +152,8 @@ HAS_ASSIGNMENT	: ASSIGNMENT { printf(" = "); } EXPRESION
 				| /* No assignment */ {}
 				;
 
-METHODS	: SCOPE STATIC TYPE VAR LP { printf("( "); } PARAMS RP { printf(") "); } LC	{ tab_counter++; printf("{\n"); } STATEMENTS RC { printf("}\n"); tab_counter--; }	{ }//printf("static %s %s ( %s ) {", current_data_type, ); }
-		| MAIN_METHOD { printf("int main(int argc, char **argv)"); } LC { tab_counter++; printf("{\n"); } STATEMENTS RC { printf("\n}\n"); tab_counter--; }
+METHODS	: SCOPE STATIC TYPE VAR { push_scope(yylval.var_name);printf("%s", yylval.var_name); }LP { printf("( "); } PARAMS RP { printf(") "); } LC	{ tab_counter++; printf("{\n"); } STATEMENTS RC { printf("}\n"); tab_counter--;pop_scope(); }	{ }//printf("static %s %s ( %s ) {", current_data_type, ); }
+		| MAIN_METHOD {push_scope("main");printf("int main(int argc, char **argv)"); } LC { tab_counter++; printf("{\n"); } STATEMENTS RC { printf("\n}\n"); tab_counter--; pop_scope();}
 		;
 
 SCOPE	: PUBLIC
@@ -273,4 +278,17 @@ int yyerror(const char *msg) {
 	return 0;
 }
 
+void push_scope(char var[MAX_NAME_LEN] ){
 
+	if(stack_scope_counter == MAX_SCOPE){
+	printf("SCOPE STACK IS FULL");
+		yyerror("");
+		exit(0);
+	}
+
+	strcpy(stack_scope[stack_scope_counter++],var);
+	
+}
+void pop_scope(){
+	--stack_scope_counter;
+}
