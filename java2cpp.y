@@ -102,7 +102,7 @@ STDIO	: PRINTLN { printf("std::cout"); } LP { printf(" << "); } EXPRESION RP { p
 		| PRINT { printf("std::cout"); } LP { printf(" << "); } EXPRESION RP SEMICOLON { printf(";\n"); }
 		;
 
-VAR_DECLARATION	: TYPE  VAR { printf("%s", yylval.var_name); } HAS_ASSIGNMENT SEMICOLON { printf(";\n"); }
+VAR_DECLARATION	: TYPE  VAR {insert_to_table(yylval.var_name,current_data_type); printf("%s", yylval.var_name); } HAS_ASSIGNMENT SEMICOLON { printf(";\n"); }
 				| TYPE  COLON_ARRAY VAR { printf("%s", yylval.var_name); } HAS_ASSIGNMENT SEMICOLON { printf(";\n"); } // shift/reduce
 				;
 
