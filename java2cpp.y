@@ -49,7 +49,7 @@ char var_name[MAX_NAME_LEN];
 
 %token VAR
 %token LAND LOR GEQ LEQ NOT GT LT NEQ DEQ PLUS MINUS MUL DIV MOD ASSIGNMENT EX
-%token MAIN_METHOD MAIN_CLASS IF ELSE ELSEIF WHILE FOR CLASS STATIC PUBLIC PRIVATE VOID PRINTLN PRINT NEW DO BREAK RETURN
+%token MAIN_METHOD MAIN_CLASS IF ELSE ELSEIF WHILE FOR CLASS STATIC PUBLIC PRIVATE VOID PRINTLN PRINT NEW DO BREAK RETURN SCANNER SYS.IN
 %token BOOL_VAL NUMBER QUOTED_STRING QUOTED_CHAR
 %token LP RP LC RC LB RB COMA SEMICOLON COLON QM SQ DQ
 %token ILCOMMENT MLCOMMENT
@@ -93,9 +93,12 @@ RETURN_ST 	: RETURN { printf("return "); } EXPRESION SEMICOLON { printf(";\n"); 
 BREAK_ST	: BREAK SEMICOLON  { printf("break;\n"); }
 			;
 
-STDIO	: PRINTLN { printf("std::cout"); } LP { printf(" << "); } EXPRESION RP { printf(" <<  std::endl"); } SEMICOLON { printf(";\n"); }
+STDIO	        : PRINTLN { printf("std::cout"); } LP { printf(" << "); } EXPRESION RP { printf(" <<  std::endl"); } SEMICOLON { printf(";\n"); }
 		| PRINT { printf("std::cout"); } LP { printf(" << "); } EXPRESION RP SEMICOLON { printf(";\n"); }
 		;
+
+MY_INPUT       :  VAR  ASSIGNMENT NEW SCANNER {printf("std::cin");} RP SYS.IN LP {printf(">>");} VAR  SEMICOLON {printf(";")} 
+                ;
 
 VAR_DECLARATION	: TYPE  VAR { printf("%s", yylval.var_name); } HAS_ASSIGNMENT SEMICOLON { printf(";\n"); }
 				| TYPE  COLON_ARRAY VAR { printf("%s", yylval.var_name); } HAS_ASSIGNMENT SEMICOLON { printf(";\n"); } // shift/reduce
