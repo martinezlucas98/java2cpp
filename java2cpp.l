@@ -38,6 +38,8 @@
 "void"                {return VOID;}
 "System.out.println"   {return PRINTLN;}
 "System.out.print"	    {return PRINT;}
+"Scanner"                {return SCANNER;}
+"System.in"              {return SYS.IN}
 
 ":"										{return COLON;}
 "?"										{return QM;}
