@@ -6,33 +6,37 @@ labels: ''
 assignees: ''
 
 ---
+**Title**
 
-**Describe the bug**
+**_Description:_**
+
 A clear and concise description of what the bug is.
 
-**To Reproduce**
+**_To Reproduce:_**
+
 Steps to reproduce the behavior:
 1. Go to '...'
 2. Click on '....'
 3. Scroll down to '....'
 4. See error
 
-**Expected behavior**
+**_Expected behavior:_**
+
 A clear and concise description of what you expected to happen.
 
-**Screenshots**
+**_Screenshots:_**
+
 If applicable, add screenshots to help explain your problem.
 
-**Desktop (please complete the following information):**
- - OS: [e.g. iOS]
- - Browser [e.g. chrome, safari]
- - Version [e.g. 22]
+**_Desktop:_**
+ - OS/Distro: [e.g. Ubuntu]
+ - Version [e.g. 18.04 LTS]
 
-**Smartphone (please complete the following information):**
- - Device: [e.g. iPhone6]
- - OS: [e.g. iOS8.1]
- - Browser [e.g. stock browser, safari]
- - Version [e.g. 22]
+**_Versions:_**
+ - java2cpp: [e.g. 1.2.3]
+ - yacc: [e.g. 1.2.3]
+ - lex [e.g. 1.2.3]
 
-**Additional context**
+**_Additional context:_**
+
 Add any other context about the problem here.
