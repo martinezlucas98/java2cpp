@@ -96,8 +96,12 @@ BREAK_ST	: BREAK SEMICOLON  { printf("break;\n"); }
 STDIO	        : PRINTLN { printf("std::cout"); } LP { printf(" << "); } EXPRESION RP { printf(" <<  std::endl"); } SEMICOLON { printf(";\n"); }
 		| PRINT { printf("std::cout"); } LP { printf(" << "); } EXPRESION RP SEMICOLON { printf(";\n"); }
 		;
+		
+SCANNER_OBJECT : SCANNER { printf("string"); } VAR { printf("%s;", yylval.var_name); } HAS_ASSIGNMENT NEW SCANNER {printf("std::cin");} LP SYS.IN RP {printf(">>");} VAR SEMICOLON { printf("%s;", yylval.var_name); } 
+               ;
 
-MY_INPUT       :  VAR  ASSIGNMENT NEW SCANNER {printf("std::cin");} RP SYS.IN LP {printf(">>");} VAR  SEMICOLON {printf(";")} 
+
+MY_INPUT        : VAR ASSIGNMENT NEW SCANNER {printf("std::cin");} LP SYS.IN RP {printf(">>");} VAR  SEMICOLON { printf("%s;", yylval.var_name); } 
                 ;
 
 VAR_DECLARATION	: TYPE  VAR { printf("%s", yylval.var_name); } HAS_ASSIGNMENT SEMICOLON { printf(";\n"); }
