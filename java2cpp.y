@@ -19,7 +19,7 @@
 	int tab_counter = 0;
 	char for_var[MAX_NAME_LEN];
 	char stack_scope[MAX_SCOPE][MAX_VARIABLES];
-	int stack_scope_counter=0;
+	int stack_scope_counter=-1;
 	struct symbol_table{char var_name[MAX_NAME_LEN]; int type;char scope_name[MAX_NAME_LEN];} sym[MAX_VARIABLES];
 	extern int lookup_in_table(char var[MAX_NAME_LEN]);
 	extern void insert_to_table(char var[MAX_NAME_LEN], int type);
@@ -90,6 +90,7 @@ STATEMENTS	: { print_tabs(); } METHODS STATEMENTS { }
 			| { print_tabs(); } STDIO STATEMENTS { }
 			| { print_tabs(); } BREAK_ST STATEMENTS { }
 			| { print_tabs(); } RETURN_ST STATEMENTS { }
+			| { print_tabs(); } VAR_ASSIGNATION STATEMENTS { }
 			| /* */	{ }
 			;
 
@@ -107,8 +108,8 @@ VAR_DECLARATION	: TYPE  VAR {insert_to_table(yylval.var_name,current_data_type);
 				| TYPE  BRACKET_ARRAY VAR { printf("%s", yylval.var_name); } HAS_ASSIGNMENT SEMICOLON { printf(";\n"); } // shift/reduce
 				;
 
-//VAR_ASSIGNATION	: VAR { printf("%s", yylval.var_name); } ASSIGNMENT { printf(" = "); } EXPRESION SEMICOLON { printf(";\n"); }
-								//;
+VAR_ASSIGNATION	: VAR { printf("%s", yylval.var_name); } ASSIGNMENT { printf(" = "); } EXPRESION SEMICOLON { printf(";\n"); }
+				;
 
 BRACKET_ARRAY	: LB NUMARRAY RB  BRACKET_ARRAY
 			|  LB RB  { bracket_counter++; } BRACKET_ARRAY
@@ -239,7 +240,8 @@ int lookup_in_table(char var[MAX_NAME_LEN])
 {
 	for(int i=0; i<table_idx; i++)
 	{	//Return rype if name and scope is match
-		if(strcmp(sym[i].var_name, var)==0 && strcmp(sym[i].scope_name, stack_scope[stack_scope_counter])==0 )
+		if(strcmp(sym[i].var_name, var)==0 &&
+		 strcmp(sym[i].scope_name, stack_scope[stack_scope_counter])==0 )
 			return sym[i].type;
 	}
 	return -1;
@@ -250,7 +252,7 @@ void insert_to_table(char var[MAX_NAME_LEN], int type)
 	if(lookup_in_table(var)==-1)
 	{
 		strcpy(sym[table_idx].var_name,var);
-		strcmp(sym[table_idx].scope_name, stack_scope[stack_scope_counter]);
+		strcpy(sym[table_idx].scope_name, stack_scope[stack_scope_counter]);
 		sym[table_idx].type = type;
 		table_idx++;
 	}
@@ -281,15 +283,12 @@ int yyerror(const char *msg) {
 }
 
 void push_scope(char var[MAX_NAME_LEN] ){
-
 	if(stack_scope_counter == MAX_SCOPE){
 	printf("SCOPE STACK IS FULL");
 		yyerror("");
 		exit(0);
 	}
-
-	strcpy(stack_scope[stack_scope_counter++],var);
-	
+	strcpy(stack_scope[++stack_scope_counter],var);
 }
 void pop_scope(){
 	--stack_scope_counter;
