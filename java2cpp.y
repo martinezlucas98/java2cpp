@@ -19,7 +19,7 @@
 	char for_var[MAX_NAME_LEN];
 	char stack_scope[MAX_SCOPE][MAX_VARIABLES];
 	int stack_scope_counter=0;
-	struct symbol_table{char var_name[MAX_NAME_LEN]; int type;} sym[MAX_VARIABLES];
+	struct symbol_table{char var_name[MAX_NAME_LEN]; int type;char scope_name[MAX_NAME_LEN];} sym[MAX_VARIABLES];
 	extern int lookup_in_table(char var[MAX_NAME_LEN]);
 	extern void insert_to_table(char var[MAX_NAME_LEN], int type);
 	extern void push_scope(char var[MAX_NAME_LEN]);
@@ -237,8 +237,8 @@ COMMENT	: ILCOMMENT		{ printf("%s\n", yylval.var_name); }
 int lookup_in_table(char var[MAX_NAME_LEN])
 {
 	for(int i=0; i<table_idx; i++)
-	{
-		if(strcmp(sym[i].var_name, var)==0)
+	{	//Return rype if name and scope is match
+		if(strcmp(sym[i].var_name, var)==0 && strcmp(sym[i].scope_name, stack_scope[stack_scope_counter])==0 )
 			return sym[i].type;
 	}
 	return -1;
@@ -249,6 +249,7 @@ void insert_to_table(char var[MAX_NAME_LEN], int type)
 	if(lookup_in_table(var)==-1)
 	{
 		strcpy(sym[table_idx].var_name,var);
+		strcmp(sym[table_idx].scope_name, stack_scope[stack_scope_counter]);
 		sym[table_idx].type = type;
 		table_idx++;
 	}
