@@ -1,8 +1,18 @@
 public class Main {
-  int x=2;
   public static void main(String[] args) {
-    x=2;
-    n=5;
-    int m=5+d;
+      
   }
+  public static void funbar(int num1, char num2) {
+    int x;
+    // int x;
+
+}
+
+  private static void bar(int [][] num1, char num2) {
+      int [][] arr=new int [10][2];
+      int x;
+      int c= 1+ 2;
+      c=1+2;
+      d=c;
+}
 }

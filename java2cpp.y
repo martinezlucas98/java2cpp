@@ -22,6 +22,7 @@
 	int stack_scope_counter=-1;
 	struct symbol_table{char var_name[MAX_NAME_LEN]; int type;char scope_name[MAX_NAME_LEN];} sym[MAX_VARIABLES];
 	extern int lookup_in_table(char var[MAX_NAME_LEN]);
+	void verify_scope(char var[MAX_NAME_LEN]);
 	extern void insert_to_table(char var[MAX_NAME_LEN], int type);
 	extern void push_scope(char var[MAX_NAME_LEN]);
 	extern void pop_scope();
@@ -108,7 +109,7 @@ VAR_DECLARATION	: TYPE  VAR {insert_to_table(yylval.var_name,current_data_type);
 				| TYPE  BRACKET_ARRAY VAR { printf("%s", yylval.var_name); } HAS_ASSIGNMENT SEMICOLON { printf(";\n"); } // shift/reduce
 				;
 
-VAR_ASSIGNATION	: VAR { printf("%s", yylval.var_name); } ASSIGNMENT { printf(" = "); } EXPRESION SEMICOLON { printf(";\n"); }
+VAR_ASSIGNATION	: VAR {verify_scope(yylval.var_name); printf("%s", yylval.var_name); } ASSIGNMENT { printf(" = "); } EXPRESION SEMICOLON { printf(";\n"); }
 				;
 
 BRACKET_ARRAY	: LB NUMARRAY RB  BRACKET_ARRAY
@@ -191,7 +192,7 @@ EXPRESION	: EXPRESION LAND { printf("&&"); } EXPRESION
 			| EXPRESION PLUS PLUS { printf("++"); }
 			| EXPRESION MINUS MINUS { printf("--"); }
 			| TERMINAL
-			| VAR { printf("[%s]", yylval.var_name); }
+			| VAR { printf("%s", yylval.var_name); }
 			;
 
 EXPRESION_ARRAY	: NEW TYPE_NO_PRINT BRACKET_ARRAY {bracket_counter=0;}
@@ -236,6 +237,28 @@ COMMENT	: ILCOMMENT		{ printf("%s\n", yylval.var_name); }
 %%
 
 #include "lex.yy.c"
+
+void verify_scope(char var[MAX_NAME_LEN]){
+	
+	int found= 0;
+	//Look in the table if var was declare in the current Scope
+	//If not look on the parent scope and so on
+	for(int j=stack_scope_counter;j<=0;j--)
+	for(int i=0; i<table_idx; i++)
+	{	
+		if(strcmp(sym[i].var_name, var)==0 &&
+		 strcmp(sym[i].scope_name, stack_scope[j])==0 )
+			found=1;
+			break;
+	}
+
+	if(!found){
+		printf("Variable was not declared in the scope \n");
+		yyerror("");
+		exit(0);
+
+	}
+}
 int lookup_in_table(char var[MAX_NAME_LEN])
 {
 	for(int i=0; i<table_idx; i++)
