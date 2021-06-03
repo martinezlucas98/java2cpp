@@ -10,6 +10,6 @@ public static void funbar2(int d) {
   private static void bar() {
       int c=x+1;
      //Descomentar para mostrar error
-      c=d+2 
+      // c=d+2 
 }
 }

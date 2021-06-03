@@ -77,7 +77,7 @@ char var_name[MAX_NAME_LEN];
 
 %%
 
-program		: { print_init(); } MAIN_CLASS LC {push_scope("global");printf("/* start Main Class */\n"); } GLOBAL_VAR_DECLARATION STATEMENTS RC {pop_scope(); printf("\n/* end Main Class */\n"); exit(0); }
+program		: { print_init(); } MAIN_CLASS LC {push_scope("global");printf("/* start Main Class */\n"); } GLOBAL_VAR_DECLARATION STATEMENTS GLOBAL_VAR_DECLARATION RC {pop_scope(); printf("\n/* end Main Class */\n"); exit(0); }
 			| /* Empty file */	{ printf("\n"); exit(2); }
 			;
 
