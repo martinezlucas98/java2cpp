@@ -2053,37 +2053,37 @@ yyreduce:
 
   case 66:
 #line 136 "java2cpp.y"
-                           {printf("while ("); }
+                           {create_scope_name_and_push_it();printf("while ("); }
 #line 2058 "y.tab.c"
     break;
 
   case 67:
 #line 136 "java2cpp.y"
-                                                                 { tab_counter++; printf("){\n"); }
+                                                                                                 { tab_counter++; printf("){\n"); }
 #line 2064 "y.tab.c"
     break;
 
   case 68:
 #line 136 "java2cpp.y"
-                                                                                                                  { tab_counter--; print_tabs(); printf("}\n"); }
+                                                                                                                                                  {pop_scope();tab_counter--; print_tabs(); printf("}\n"); }
 #line 2070 "y.tab.c"
     break;
 
   case 69:
 #line 140 "java2cpp.y"
-                         { printf("for ("); }
+                         {create_scope_name_and_push_it(); printf("for ("); }
 #line 2076 "y.tab.c"
     break;
 
   case 70:
 #line 140 "java2cpp.y"
-                                                               { tab_counter++; printf(") {\n"); }
+                                                                                               { tab_counter++; printf(") {\n"); }
 #line 2082 "y.tab.c"
     break;
 
   case 71:
 #line 140 "java2cpp.y"
-                                                                                                                 { tab_counter--; print_tabs(); printf("}\n"); }
+                                                                                                                                                 {pop_scope(); tab_counter--; print_tabs(); printf("}\n"); }
 #line 2088 "y.tab.c"
     break;
 
@@ -2119,13 +2119,13 @@ yyreduce:
 
   case 79:
 #line 148 "java2cpp.y"
-                                   { printf("%s", yylval.var_name); }
+                                   {insert_to_table(yylval.var_name,current_data_type); printf("%s", yylval.var_name); }
 #line 2124 "y.tab.c"
     break;
 
   case 81:
 #line 149 "java2cpp.y"
-                              { printf("%s", yylval.var_name); }
+                              {verify_scope(yylval.var_name);printf("%s", yylval.var_name); }
 #line 2130 "y.tab.c"
     break;
 

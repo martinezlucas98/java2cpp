@@ -133,11 +133,11 @@ ELSE_VARIATIONS	: ELSE LC {create_scope_name_and_push_it(); tab_counter++; print
 				| /* */ { printf("\n"); }
 				;
 				
-WHILE_LOOP      : WHILE LP {printf("while ("); } DECL_EXPR RP LC { tab_counter++; printf("){\n"); } STATEMENTS RC { tab_counter--; print_tabs(); printf("}\n"); }
+WHILE_LOOP      : WHILE LP {create_scope_name_and_push_it();printf("while ("); } DECL_EXPR RP LC { tab_counter++; printf("){\n"); } STATEMENTS RC {pop_scope();tab_counter--; print_tabs(); printf("}\n"); }
                            ;
 
 
-FOR_LOOP	: FOR LP { printf("for ("); } FOR_PARAMS RP LC { tab_counter++; printf(") {\n"); } STATEMENTS RC { tab_counter--; print_tabs(); printf("}\n"); }
+FOR_LOOP	: FOR LP {create_scope_name_and_push_it(); printf("for ("); } FOR_PARAMS RP LC { tab_counter++; printf(") {\n"); } STATEMENTS RC {pop_scope(); tab_counter--; print_tabs(); printf("}\n"); }
 			;
 
 FOR_PARAMS	: DECL_EXPR SEMICOLON { printf("; "); } DECL_EXPR SEMICOLON { printf("; "); } EXPRESION
@@ -145,8 +145,8 @@ FOR_PARAMS	: DECL_EXPR SEMICOLON { printf("; "); } DECL_EXPR SEMICOLON { printf(
 			;
 
 DECL_EXPR	: EXPRESION
-			| TYPE VAR { printf("%s", yylval.var_name); } HAS_ASSIGNMENT
-			| VAR { printf("%s", yylval.var_name); } HAS_ASSIGNMENT//ASSIGNMENT { printf(" = "); } EXPRESION
+			| TYPE VAR {insert_to_table(yylval.var_name,current_data_type); printf("%s", yylval.var_name); } HAS_ASSIGNMENT
+			| VAR {verify_scope(yylval.var_name);printf("%s", yylval.var_name); } HAS_ASSIGNMENT//ASSIGNMENT { printf(" = "); } EXPRESION
 			| /* */  { }
         	;
 
