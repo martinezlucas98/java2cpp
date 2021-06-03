@@ -77,7 +77,7 @@ char var_name[MAX_NAME_LEN];
 
 %%
 
-program		: { print_init(); } MAIN_CLASS LC {push_scope("global");printf("/* start Main Class */\n"); } STATEMENTS RC {pop_scope(); printf("\n/* end Main Class */\n"); exit(0); }
+program		: { print_init(); } MAIN_CLASS LC {push_scope("global");printf("/* start Main Class */\n"); } GLOBAL_VAR_DECLARATION STATEMENTS RC {pop_scope(); printf("\n/* end Main Class */\n"); exit(0); }
 			| /* Empty file */	{ printf("\n"); exit(2); }
 			;
 
@@ -93,6 +93,13 @@ STATEMENTS	: { print_tabs(); } METHODS STATEMENTS { }
 			| { print_tabs(); } RETURN_ST STATEMENTS { }
 			| { print_tabs(); } VAR_ASSIGNATION STATEMENTS { }
 			| /* */	{ }
+			;
+GLOBAL_VAR_DECLARATION : SCOPE IS_STATIC VAR_DECLARATION
+						| /* */
+						;
+
+IS_STATIC : STATIC
+			| /* */
 			;
 
 RETURN_ST 	: RETURN { printf("return "); } EXPRESION SEMICOLON { printf(";\n"); }
