@@ -1725,13 +1725,13 @@ yyreduce:
 
   case 3:
 #line 80 "java2cpp.y"
-                                                  { printf("/* start Main Class */\n"); }
+                                                  {push_scope("global");printf("/* start Main Class */\n"); }
 #line 1730 "y.tab.c"
     break;
 
   case 4:
 #line 80 "java2cpp.y"
-                                                                                                        { printf("\n/* end Main Class */\n"); exit(0); }
+                                                                                                                            {pop_scope(); printf("\n/* end Main Class */\n"); exit(0); }
 #line 1736 "y.tab.c"
     break;
 
@@ -1953,19 +1953,19 @@ yyreduce:
 
   case 41:
 #line 109 "java2cpp.y"
-                                                          { printf("%s", yylval.var_name); }
+                                                          {insert_to_table(yylval.var_name,current_data_type);printf("%s", yylval.var_name); }
 #line 1958 "y.tab.c"
     break;
 
   case 42:
 #line 109 "java2cpp.y"
-                                                                                                                      { printf(";\n"); }
+                                                                                                                                                                        { printf(";\n"); }
 #line 1964 "y.tab.c"
     break;
 
   case 43:
 #line 112 "java2cpp.y"
-                      {verify_scope(yylval.var_name); printf("%s", yylval.var_name); }
+                      {printf("%s", yylval.var_name);verify_scope(yylval.var_name);  }
 #line 1970 "y.tab.c"
     break;
 
@@ -2181,31 +2181,31 @@ yyreduce:
 
   case 90:
 #line 158 "java2cpp.y"
-                                                                                                 { printf("( "); }
+                                                                                                 { printf("("); }
 #line 2186 "y.tab.c"
     break;
 
   case 91:
 #line 158 "java2cpp.y"
-                                                                                                                             { printf(") "); }
+                                                                                                                            { printf(")"); }
 #line 2192 "y.tab.c"
     break;
 
   case 92:
 #line 158 "java2cpp.y"
-                                                                                                                                                        { tab_counter++; printf("{\n"); }
+                                                                                                                                                { tab_counter++; printf("{\n"); }
 #line 2198 "y.tab.c"
     break;
 
   case 93:
 #line 158 "java2cpp.y"
-                                                                                                                                                                                                        { printf("}\n"); tab_counter--;pop_scope(); }
+                                                                                                                                                                                                { printf("}\n"); tab_counter--;pop_scope(); }
 #line 2204 "y.tab.c"
     break;
 
   case 94:
 #line 158 "java2cpp.y"
-                                                                                                                                                                                                                                                        { }
+                                                                                                                                                                                                                                                { }
 #line 2210 "y.tab.c"
     break;
 
@@ -2241,13 +2241,13 @@ yyreduce:
 
   case 105:
 #line 173 "java2cpp.y"
-                           { printf("%s", yylval.var_name); }
+                           {insert_to_table(yylval.var_name,current_data_type);printf("%s", yylval.var_name); }
 #line 2246 "y.tab.c"
     break;
 
   case 106:
 #line 174 "java2cpp.y"
-                                                  { printf("%s", yylval.var_name);printf("[]");bracket_counter-- ;for(;bracket_counter>0;bracket_counter--)printf("[%d]",DIMENSION);}
+                                                  {insert_to_table(yylval.var_name,current_data_type); printf("%s", yylval.var_name);printf("[]");bracket_counter-- ;for(;bracket_counter>0;bracket_counter--)printf("[%d]",DIMENSION);}
 #line 2252 "y.tab.c"
     break;
 
@@ -2355,7 +2355,7 @@ yyreduce:
 
   case 139:
 #line 195 "java2cpp.y"
-                              { printf("%s", yylval.var_name); }
+                              { printf("%s", yylval.var_name); verify_scope(yylval.var_name);}
 #line 2360 "y.tab.c"
     break;
 
@@ -2736,21 +2736,20 @@ yyreturn:
 #include "lex.yy.c"
 
 void verify_scope(char var[MAX_NAME_LEN]){
-	
 	int found= 0;
 	//Look in the table if var was declare in the current Scope
 	//If not look on the parent scope and so on
-	for(int j=stack_scope_counter;j<=0;j--)
+	for(int j=stack_scope_counter;j>=0;j--)
 	for(int i=0; i<table_idx; i++)
 	{	
 		if(strcmp(sym[i].var_name, var)==0 &&
-		 strcmp(sym[i].scope_name, stack_scope[j])==0 )
+		 strcmp(sym[i].scope_name, stack_scope[j])==0 ){
 			found=1;
-			break;
+			break;}
 	}
 
 	if(!found){
-		printf("Variable was not declared in the scope \n");
+		printf("\nVariable %s was not declared in the scope \n",var);
 		yyerror("");
 		exit(0);
 
@@ -2768,7 +2767,7 @@ int lookup_in_table(char var[MAX_NAME_LEN])
 }
 
 void insert_to_table(char var[MAX_NAME_LEN], int type)
-{
+{	
 	if(lookup_in_table(var)==-1)
 	{
 		strcpy(sym[table_idx].var_name,var);
