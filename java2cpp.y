@@ -106,7 +106,7 @@ STDIO	: PRINTLN { printf("std::cout"); } LP { printf(" << "); } EXPRESION RP { p
 		;
 
 VAR_DECLARATION	: TYPE  VAR {insert_to_table(yylval.var_name,current_data_type); printf("%s", yylval.var_name); } HAS_ASSIGNMENT SEMICOLON { printf(";\n"); }
-				| TYPE  BRACKET_ARRAY VAR { printf("%s", yylval.var_name); } HAS_ASSIGNMENT SEMICOLON { printf(";\n"); } // shift/reduce
+				| TYPE  BRACKET_ARRAY VAR {insert_to_table(yylval.var_name,current_data_type);printf("%s", yylval.var_name); } HAS_ASSIGNMENT SEMICOLON { printf(";\n"); } // shift/reduce
 				;
 
 VAR_ASSIGNATION	: VAR {verify_scope(yylval.var_name); printf("%s", yylval.var_name); } ASSIGNMENT { printf(" = "); } EXPRESION SEMICOLON { printf(";\n"); }
@@ -192,7 +192,7 @@ EXPRESION	: EXPRESION LAND { printf("&&"); } EXPRESION
 			| EXPRESION PLUS PLUS { printf("++"); }
 			| EXPRESION MINUS MINUS { printf("--"); }
 			| TERMINAL
-			| VAR { printf("%s", yylval.var_name); }
+			| VAR {verify_scope(yylval.var_name); printf("%s", yylval.var_name); }
 			;
 
 EXPRESION_ARRAY	: NEW TYPE_NO_PRINT BRACKET_ARRAY {bracket_counter=0;}
@@ -243,7 +243,7 @@ void verify_scope(char var[MAX_NAME_LEN]){
 	int found= 0;
 	//Look in the table if var was declare in the current Scope
 	//If not look on the parent scope and so on
-	for(int j=stack_scope_counter;j<=0;j--)
+	for(int j=stack_scope_counter;j>=0;j--)
 	for(int i=0; i<table_idx; i++)
 	{	
 		if(strcmp(sym[i].var_name, var)==0 &&
@@ -253,7 +253,7 @@ void verify_scope(char var[MAX_NAME_LEN]){
 	}
 
 	if(!found){
-		printf("Variable was not declared in the scope \n");
+		printf("\nVariable was not declared in the scope \n");
 		yyerror("");
 		exit(0);
 

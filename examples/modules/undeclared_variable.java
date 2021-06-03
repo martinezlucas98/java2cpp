@@ -1,18 +1,14 @@
 public class Main {
-  public static void main(String[] args) {
-      
-  }
+ int x;
+ 
   public static void funbar(int num1, char num2) {
-    int x;
-    // int x;
-
-}
-
-  private static void bar(int [][] num1, char num2) {
-      int [][] arr=new int [10][2];
-      int x;
-      int c= 1+ 2;
-      c=1+2;
-      d=c;
+    int x;  
+  }
+public static void funbar2(int x) {
+    int c=x+2;  
+  }
+  private static void bar() {
+      int c= x+1;
+      // c=1+2;
 }
 }
