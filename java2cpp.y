@@ -28,6 +28,7 @@
 	extern void create_scope_name_and_push_it();//Create unique name for loops and conditional statment
 	extern void pop_scope();
 	extern void print_tabs();
+	extern void print_table_symbols();
 	char var_list[MAX_VARIABLES][MAX_NAME_LEN];	// MAX_VARIABLES variable names with each variable being atmost MAX_NAME_LEN characters long
 	int string_or_var[MAX_VARIABLES];
 	//extern int *yytext;
@@ -128,7 +129,7 @@ BRACKET_ARRAY	: LB NUMARRAY RB  BRACKET_ARRAY
 IF_STATEMENT	: IF LP { printf("if (");create_scope_name_and_push_it(); } EXPRESION RP LC { tab_counter++; printf(") {\n"); } STATEMENTS RC { pop_scope();tab_counter--; print_tabs(); printf("}"); } ELSE_VARIATIONS
 				;
 
-ELSE_VARIATIONS	: ELSE LC {create_scope_name_and_push_it(); tab_counter++; printf(" else {\n"); } STATEMENTS RC { tab_counter--; print_tabs(); printf("}"); }
+ELSE_VARIATIONS	: ELSE LC {create_scope_name_and_push_it(); tab_counter++; printf(" else {\n"); } STATEMENTS RC {pop_scope();tab_counter--; print_tabs(); printf("}"); }
 				| ELSEIF LP { printf(" else if ("); } EXPRESION RP { printf(")"); } LC {create_scope_name_and_push_it();tab_counter++; printf(") {\n"); } STATEMENTS RC { pop_scope();tab_counter--;print_tabs(); printf("}"); } ELSE_VARIATIONS
 				| /* */ { printf("\n"); }
 				;
@@ -245,7 +246,12 @@ COMMENT	: ILCOMMENT		{ printf("%s\n", yylval.var_name); }
 %%
 
 #include "lex.yy.c"
-
+void print_table_symbols(){
+			for(int i=0; i<table_idx; i++)
+		{	
+			printf("%d var=%s Scope=%s type=%d",i,sym[i].var_name,sym[i].scope_name,sym[i].type);			
+		}
+}
 void verify_scope(char var[MAX_NAME_LEN]){
 	int found= 0;
 	//Look in the table if var was declare in the current Scope
@@ -260,7 +266,8 @@ void verify_scope(char var[MAX_NAME_LEN]){
 	}
 
 	if(!found){
-		printf("\nVariable %s was not declared in the scope \n",var);
+		printf("\nVariable %s was not declared in the scope %s \n",var,stack_scope[stack_scope_counter]);
+		print_table_symbols();
 		yyerror("");
 		exit(0);
 
