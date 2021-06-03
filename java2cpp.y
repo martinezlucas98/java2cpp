@@ -22,9 +22,10 @@
 	int stack_scope_counter=-1;
 	struct symbol_table{char var_name[MAX_NAME_LEN]; int type;char scope_name[MAX_NAME_LEN];} sym[MAX_VARIABLES];
 	extern int lookup_in_table(char var[MAX_NAME_LEN]);
-	void verify_scope(char var[MAX_NAME_LEN]);
+	void verify_scope(char var[MAX_NAME_LEN]); // When a variable is used look first if it was declared before
 	extern void insert_to_table(char var[MAX_NAME_LEN], int type);
-	extern void push_scope(char var[MAX_NAME_LEN]);
+	extern void push_scope(char var[MAX_NAME_LEN]);// Add to the stack the name of the current scope
+	extern void create_scope_name_and_push_it();//Create unique name for loops and conditional statment
 	extern void pop_scope();
 	extern void print_tabs();
 	char var_list[MAX_VARIABLES][MAX_NAME_LEN];	// MAX_VARIABLES variable names with each variable being atmost MAX_NAME_LEN characters long
@@ -124,11 +125,11 @@ BRACKET_ARRAY	: LB NUMARRAY RB  BRACKET_ARRAY
 			| /* */
 			;
 
-IF_STATEMENT	: IF LP { printf("if ("); } EXPRESION RP LC { tab_counter++; printf(") {\n"); } STATEMENTS RC { tab_counter--; print_tabs(); printf("}"); } ELSE_VARIATIONS
+IF_STATEMENT	: IF LP { printf("if (");create_scope_name_and_push_it(); } EXPRESION RP LC { tab_counter++; printf(") {\n"); } STATEMENTS RC { pop_scope();tab_counter--; print_tabs(); printf("}"); } ELSE_VARIATIONS
 				;
 
-ELSE_VARIATIONS	: ELSE LC { tab_counter++; printf(" else {\n"); } STATEMENTS RC { tab_counter--; print_tabs(); printf("}"); }
-				| ELSEIF LP { printf(" else if ("); } EXPRESION RP { printf(")"); } LC { tab_counter++; printf(") {\n"); } STATEMENTS RC { tab_counter--;print_tabs(); printf("}"); } ELSE_VARIATIONS
+ELSE_VARIATIONS	: ELSE LC {create_scope_name_and_push_it(); tab_counter++; printf(" else {\n"); } STATEMENTS RC { tab_counter--; print_tabs(); printf("}"); }
+				| ELSEIF LP { printf(" else if ("); } EXPRESION RP { printf(")"); } LC {create_scope_name_and_push_it();tab_counter++; printf(") {\n"); } STATEMENTS RC { pop_scope();tab_counter--;print_tabs(); printf("}"); } ELSE_VARIATIONS
 				| /* */ { printf("\n"); }
 				;
 				
@@ -309,6 +310,14 @@ int yyerror(const char *msg) {
 	printf("Parsing failed\nLine number: %d %s\n", yylineno, msg);
 	success = 0;
 	return 0;
+}
+void create_scope_name_and_push_it(){
+	static int id_special_block=0;
+
+	char buff[20]; 
+	 snprintf(buff,20, "%s_%d","es_scope", id_special_block++); 
+	 push_scope(buff);
+	
 }
 
 void push_scope(char var[MAX_NAME_LEN] ){
