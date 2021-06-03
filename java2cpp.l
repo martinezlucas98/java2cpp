@@ -39,7 +39,7 @@
 "System.out.println"   {return PRINTLN;}
 "System.out.print"	    {return PRINT;}
 "Scanner"                {return SCANNER;}
-"System.in"              {return SYS_IN}
+"System.in"              {return SYS_IN;}
 
 ":"										{return COLON;}
 "?"										{return QM;}
