@@ -9,6 +9,6 @@ public static void funbar2(int d) {
   }
   private static void bar() {
       int c=x+1;
-      c=d+2;
+      // c=d+2 Descomentar para test
 }
 }

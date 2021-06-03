@@ -2776,7 +2776,7 @@ void insert_to_table(char var[MAX_NAME_LEN], int type)
 		table_idx++;
 	}
 	else {
-		printf("Multiple declaration of variable\n");
+		printf("\n Multiple declaration of variable %s \n",var);
 		yyerror("");
 		exit(0);
 	}
