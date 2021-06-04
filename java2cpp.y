@@ -79,12 +79,12 @@ char var_name[MAX_NAME_LEN];
 
 %%
 
-program		: { print_init(); } MAIN_CLASS LC {push_scope("global");printf("/* start Main Class */\n"); }  STATEMENTS GLOBAL_VAR_DECLARATION RC {pop_scope(); printf("\n/* end Main Class */\n"); exit(0); }
+program		: { print_init(); } MAIN_CLASS LC {push_scope("global");printf("/* start Main Class */\n"); }  STATEMENTS  RC {pop_scope(); printf("\n/* end Main Class */\n"); exit(0); }
 			| /* Empty file */	{ printf("\n"); exit(2); }
 			;
 
-STATEMENTS	: { print_tabs(); } METHODS STATEMENTS { }
-			| { print_tabs(); } VAR_DECLARATION STATEMENTS { }
+STATEMENTS	: { print_tabs(); } DECLARATION STATEMENTS { }
+			| { print_tabs(); } MAIN_METHOD_DECLARATION STATEMENTS { }
 			| { print_tabs(); } COMMENT STATEMENTS { }
 			| { print_tabs(); } IF_STATEMENT STATEMENTS { }
 			| { print_tabs(); } FOR_LOOP STATEMENTS { }
@@ -96,10 +96,15 @@ STATEMENTS	: { print_tabs(); } METHODS STATEMENTS { }
 			| { print_tabs(); } VAR_ASSIGNATION STATEMENTS { }
 			| /* */	{ }
 			;
-GLOBAL_VAR_DECLARATION : SCOPE IS_STATIC VAR_DECLARATION
-						| /* */
-						;
 
+IGNORE_SCOPE	: SCOPE IS_STATIC TYPE 
+				;
+DECLARATION 	:IGNORE_SCOPE METHODS
+				|IGNORE_SCOPE VAR_DECLARATION 
+				;
+
+METHODS	:   VAR {push_scope(yylval.var_name);printf("%s", yylval.var_name); }LP { printf("("); } PARAMS RP { printf(")"); } LC	{ tab_counter++; printf("{\n"); } STATEMENTS RC { printf("}\n"); tab_counter--;pop_scope(); }	{ }//printf("static %s %s ( %s ) {", current_data_type, ); }
+		;
 IS_STATIC : STATIC
 			| /* */
 			;
@@ -114,8 +119,8 @@ STDIO	: PRINTLN { printf("std::cout"); } LP { printf(" << "); } EXPRESION RP { p
 		| PRINT { printf("std::cout"); } LP { printf(" << "); } EXPRESION RP SEMICOLON { printf(";\n"); }
 		;
 
-VAR_DECLARATION	: TYPE  VAR {insert_to_table(yylval.var_name,current_data_type); printf("%s", yylval.var_name); } HAS_ASSIGNMENT SEMICOLON { printf(";\n"); }
-				| TYPE  BRACKET_ARRAY VAR {insert_to_table(yylval.var_name,current_data_type);printf("%s", yylval.var_name); } HAS_ASSIGNMENT SEMICOLON { printf(";\n"); } // shift/reduce
+VAR_DECLARATION	:   VAR {insert_to_table(yylval.var_name,current_data_type); printf("%s", yylval.var_name); } HAS_ASSIGNMENT SEMICOLON { printf(";\n"); }
+				|   BRACKET_ARRAY VAR {insert_to_table(yylval.var_name,current_data_type);printf("%s", yylval.var_name); } HAS_ASSIGNMENT SEMICOLON { printf(";\n"); } // shift/reduce
 				;
 
 VAR_ASSIGNATION	: VAR {printf("%s", yylval.var_name);verify_scope(yylval.var_name);  } ASSIGNMENT { printf(" = "); } EXPRESION SEMICOLON { printf(";\n"); }
@@ -164,10 +169,10 @@ HAS_ASSIGNMENT	: ASSIGNMENT { printf(" = "); } EXPRESION
 				| /* No assignment */ {}
 				;
 
-METHODS	: SCOPE STATIC TYPE VAR { push_scope(yylval.var_name);printf("%s", yylval.var_name); }LP { printf("("); } PARAMS RP { printf(")"); } LC	{ tab_counter++; printf("{\n"); } STATEMENTS RC { printf("}\n"); tab_counter--;pop_scope(); }	{ }//printf("static %s %s ( %s ) {", current_data_type, ); }
-		| MAIN_METHOD {push_scope("main");printf("int main(int argc, char **argv)"); } LC { tab_counter++; printf("{\n"); } STATEMENTS RC { printf("\n}\n"); tab_counter--; pop_scope();}
-		| SCOPE STATIC VAR_DECLARATION GLOBAL_VAR_DECLARATION
-		;
+MAIN_METHOD_DECLARATION	: MAIN_METHOD { push_scope("main");printf("int main(int argc, char **argv)"); } LC { tab_counter++; printf("{\n"); } STATEMENTS RC { printf("\n}\n"); tab_counter--; pop_scope();}
+			;
+
+
 
 SCOPE	: PUBLIC
 		| PRIVATE 
@@ -248,9 +253,10 @@ COMMENT	: ILCOMMENT		{ printf("%s\n", yylval.var_name); }
 
 #include "lex.yy.c"
 void print_table_symbols(){
-			for(int i=0; i<table_idx; i++)
+		printf("\n");
+		for(int i=0; i<table_idx; i++)
 		{	
-			printf("%d var=%s Scope=%s type=%d",i,sym[i].var_name,sym[i].scope_name,sym[i].type);			
+			printf("%d var=%s Scope=%s type=%d\n",i,sym[i].var_name,sym[i].scope_name,sym[i].type);			
 		}
 }
 void verify_scope(char var[MAX_NAME_LEN]){
@@ -267,7 +273,7 @@ void verify_scope(char var[MAX_NAME_LEN]){
 	}
 
 	if(!found){
-		printf("\nVariable %s was not declared in the scope %s \n",var,stack_scope[stack_scope_counter]);
+		printf("\nVariable %s was not declared in the scope  \n",var);
 		print_table_symbols();
 		yyerror("");
 		exit(0);
@@ -277,7 +283,7 @@ void verify_scope(char var[MAX_NAME_LEN]){
 int lookup_in_table(char var[MAX_NAME_LEN])
 {
 	for(int i=0; i<table_idx; i++)
-	{	//Return rype if name and scope is match
+	{	
 		if(strcmp(sym[i].var_name, var)==0 &&
 		 strcmp(sym[i].scope_name, stack_scope[stack_scope_counter])==0 )
 			return sym[i].type;
