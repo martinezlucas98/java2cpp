@@ -79,7 +79,7 @@ char var_name[MAX_NAME_LEN];
 
 %%
 
-program		: { print_init(); } MAIN_CLASS LC {push_scope("global");printf("/* start Main Class */\n"); } GLOBAL_VAR_DECLARATION STATEMENTS GLOBAL_VAR_DECLARATION RC {pop_scope(); printf("\n/* end Main Class */\n"); exit(0); }
+program		: { print_init(); } MAIN_CLASS LC {push_scope("global");printf("/* start Main Class */\n"); }  STATEMENTS GLOBAL_VAR_DECLARATION RC {pop_scope(); printf("\n/* end Main Class */\n"); exit(0); }
 			| /* Empty file */	{ printf("\n"); exit(2); }
 			;
 
@@ -166,6 +166,7 @@ HAS_ASSIGNMENT	: ASSIGNMENT { printf(" = "); } EXPRESION
 
 METHODS	: SCOPE STATIC TYPE VAR { push_scope(yylval.var_name);printf("%s", yylval.var_name); }LP { printf("("); } PARAMS RP { printf(")"); } LC	{ tab_counter++; printf("{\n"); } STATEMENTS RC { printf("}\n"); tab_counter--;pop_scope(); }	{ }//printf("static %s %s ( %s ) {", current_data_type, ); }
 		| MAIN_METHOD {push_scope("main");printf("int main(int argc, char **argv)"); } LC { tab_counter++; printf("{\n"); } STATEMENTS RC { printf("\n}\n"); tab_counter--; pop_scope();}
+		| SCOPE STATIC VAR_DECLARATION GLOBAL_VAR_DECLARATION
 		;
 
 SCOPE	: PUBLIC
