@@ -1,7 +1,7 @@
 public class Main {
   public static void main(String[] args) {
     int m =5;
-     int m =6;
+     int n =6;
     double[] arr1 = new int[m];
     double[] arr2 = new int[m][n];
     double[] arr3 = new int[5];
