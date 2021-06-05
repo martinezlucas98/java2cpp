@@ -3,6 +3,7 @@
 	#include<stdlib.h>
 	#include<string.h>
 	#include<time.h>
+	#define YYDEBUG 0
 	#define MAX_NAME_LEN 32
 	#define MAX_VARIABLES 32
 	#define DIMENSION 20
@@ -21,9 +22,11 @@
 	extern int lookup_in_table(char var[MAX_NAME_LEN]);
 	extern void insert_to_table(char var[MAX_NAME_LEN], int type);
 	extern void print_tabs();
+	extern void check_syntax_errors();
 	char var_list[MAX_VARIABLES][MAX_NAME_LEN];	// MAX_VARIABLES variable names with each variable being atmost MAX_NAME_LEN characters long
 	int string_or_var[MAX_VARIABLES];
 	//extern int *yytext;
+	char syntax_errors[255] = "";
 
 	// functions
 	void print_init(){
@@ -85,21 +88,22 @@ STATEMENTS	: { print_tabs(); } METHODS STATEMENTS { }
 			| { print_tabs(); } STDIO STATEMENTS { }
 			| { print_tabs(); } BREAK_ST STATEMENTS { }
 			| { print_tabs(); } RETURN_ST STATEMENTS { }
+			| error DELIMITER STATEMENTS
 			| /* */	{ }
 			;
 
-RETURN_ST 	: RETURN { printf("return "); } EXPRESION SEMICOLON { printf(";\n"); }
+RETURN_ST 	: RETURN { printf("return "); } EXPRESION MUST_SEMICOLON { printf("\n"); }
 			;
 
-BREAK_ST	: BREAK SEMICOLON  { printf("break;\n"); }
+BREAK_ST	: BREAK { printf("break"); } MUST_SEMICOLON { printf("\n"); }
 			;
 
-STDIO	: PRINTLN { printf("std::cout"); } LP { printf(" << "); } EXPRESION RP { printf(" <<  std::endl"); } SEMICOLON { printf(";\n"); }
-		| PRINT { printf("std::cout"); } LP { printf(" << "); } EXPRESION RP SEMICOLON { printf(";\n"); }
+STDIO	: PRINTLN { printf("std::cout"); } LP { printf(" << "); } EXPRESION RP { printf(" <<  std::endl"); } MUST_SEMICOLON { printf("\n"); }
+		| PRINT { printf("std::cout"); } LP { printf(" << "); } EXPRESION RP MUST_SEMICOLON { printf("\n"); }
 		;
 
-VAR_DECLARATION	: TYPE  VAR { printf("%s", yylval.var_name); } HAS_ASSIGNMENT SEMICOLON { printf(";\n"); }
-				| TYPE  BRACKET_ARRAY VAR { printf("%s", yylval.var_name); } HAS_ASSIGNMENT SEMICOLON { printf(";\n"); } // shift/reduce
+VAR_DECLARATION	: TYPE  VAR { printf("%s", yylval.var_name); } HAS_ASSIGNMENT MUST_SEMICOLON { printf("\n"); check_syntax_errors(); }
+				| TYPE  BRACKET_ARRAY VAR { printf("%s", yylval.var_name); } HAS_ASSIGNMENT MUST_SEMICOLON { printf("\n"); check_syntax_errors(); } // shift/reduce
 				;
 
 //VAR_ASSIGNATION	: VAR { printf("%s", yylval.var_name); } ASSIGNMENT { printf(" = "); } EXPRESION SEMICOLON { printf(";\n"); }
@@ -110,11 +114,11 @@ BRACKET_ARRAY	: LB NUMARRAY RB  BRACKET_ARRAY
 			| /* */
 			;
 
-IF_STATEMENT	: IF LP { printf("if ("); } EXPRESION RP LC { tab_counter++; printf(") {\n"); } STATEMENTS RC { tab_counter--; print_tabs(); printf("}"); } ELSE_VARIATIONS
+IF_STATEMENT	: IF LP { printf("if ("); } MUST_EXPRESSION RP LC { tab_counter++; printf(") {\n"); check_syntax_errors();} STATEMENTS RC { tab_counter--; print_tabs(); printf("}"); } ELSE_VARIATIONS
 				;
 
 ELSE_VARIATIONS	: ELSE LC { tab_counter++; printf(" else {\n"); } STATEMENTS RC { tab_counter--; print_tabs(); printf("}"); }
-				| ELSEIF LP { printf(" else if ("); } EXPRESION RP { printf(")"); } LC { tab_counter++; printf(") {\n"); } STATEMENTS RC { tab_counter--;print_tabs(); printf("}"); } ELSE_VARIATIONS
+				| ELSEIF LP { printf(" else if ("); } MUST_EXPRESSION RP { printf(")"); } LC { tab_counter++; printf(") {\n"); check_syntax_errors();} STATEMENTS RC { tab_counter--;print_tabs(); printf("}"); } ELSE_VARIATIONS
 				| /* */ { printf("\n"); }
 				;
 				
@@ -122,10 +126,10 @@ WHILE_LOOP      : WHILE LP {printf("while ("); } DECL_EXPR RP LC { tab_counter++
                            ;
 
 
-FOR_LOOP	: FOR LP { printf("for ("); } FOR_PARAMS RP LC { tab_counter++; printf(") {\n"); } STATEMENTS RC { tab_counter--; print_tabs(); printf("}\n"); }
+FOR_LOOP	: FOR LP { printf("for ("); } FOR_PARAMS RP LC { tab_counter++; printf(") {\n"); check_syntax_errors(); } STATEMENTS RC { tab_counter--; print_tabs(); printf("}\n"); }
 			;
 
-FOR_PARAMS	: DECL_EXPR SEMICOLON { printf("; "); } DECL_EXPR SEMICOLON { printf("; "); } EXPRESION
+FOR_PARAMS	: DECL_EXPR SEMICOLON_NOT_COMA DECL_EXPR SEMICOLON_NOT_COMA EXPRESION // SEMICOLON_NOT_COMA causes 1 reduce/reduce conflict
 			| TYPE VAR COLON { printf("%s", yylval.var_name); } { printf(" : "); } VAR { printf("%s", yylval.var_name); }// shift/reduce
 			;
 
@@ -135,7 +139,7 @@ DECL_EXPR	: EXPRESION
 			| /* */  { }
         	;
 
-DO_WHILE_LOOP   : DO LC { printf("do{\n"); tab_counter++;} STATEMENTS RC WHILE LP {tab_counter--; print_tabs(); printf("}while("); } DECL_EXPR RP SEMICOLON { printf(");"); } 
+DO_WHILE_LOOP   : DO LC { printf("do{\n"); tab_counter++;} STATEMENTS RC WHILE LP {tab_counter--; print_tabs(); printf("}while("); } DECL_EXPR RP { printf(")"); } MUST_SEMICOLON { printf("\n"); } 
                 ;
 
 
@@ -143,7 +147,7 @@ NUMARRAY	: NUMBER   { printf("[%s]", yylval.var_name); }
 			| VAR { printf("[%s]", yylval.var_name); }
 			;
 
-HAS_ASSIGNMENT	: ASSIGNMENT { printf(" = "); } EXPRESION
+HAS_ASSIGNMENT	: ASSIGNMENT { printf(" = "); } MUST_EXPRESSION //check this
 				| ASSIGNMENT EXPRESION_ARRAY
 				| /* No assignment */ {}
 				;
@@ -171,6 +175,7 @@ HAS_PARAMS	: TYPE VAR { printf("%s", yylval.var_name); }
 EXPRESION	: EXPRESION LAND { printf("&&"); } EXPRESION
 			| EXPRESION LOR { printf("||"); } EXPRESION
 			| EXPRESION LEQ { printf("<="); } EXPRESION
+			| EXPRESION GEQ { printf(">="); } EXPRESION
 			| EXPRESION GT { printf(">"); } EXPRESION
 			| EXPRESION LT { printf("<"); } EXPRESION
 			| EXPRESION NEQ { printf("!="); } EXPRESION
@@ -223,9 +228,26 @@ TERMINAL	: NUMBER { printf("%s", yylval.var_name); }
 			;
 
 COMMENT	: ILCOMMENT		{ printf("%s\n", yylval.var_name); }
-		| MLCOMMENT		{ printf("%s", yylval.var_name); } // falta poner entre los metodos antes y despues del { } creo con POSSIBLE_COMMENT cpaz
+		| MLCOMMENT		{ printf("%s", yylval.var_name); } // we need to add comments bewteen { } on methods with POSSIBLE_COMMENT maybe
 		;
 
+DELIMITER	: SEMICOLON { }
+			| RC { printf("}\n"); } // verify this
+			;
+
+MUST_SEMICOLON	: SEMICOLON { printf(";"); }
+				| /*empty*/ { yyerror("Syntax error: expected ';' at end of declaration"); }
+				;
+
+SEMICOLON_NOT_COMA	: SEMICOLON { printf(";"); }
+					| COMA { printf(","); strcat(syntax_errors,"Syntax error: expected ';' instead of ','\t"); } 
+					;
+
+MUST_EXPRESSION : EXPRESION
+				| VAR ASSIGNMENT { printf("%s", yylval.var_name); printf("="); } EXPRESION { }
+				| EXPRESION ASSIGNMENT { printf("="); } EXPRESION { strcat(syntax_errors,"Syntax error: expected '==' operator\n"); }
+				| /*empty*/ { strcat(syntax_errors,"Syntax error: expected expresion\n"); }
+				;
 
 %%
 
@@ -263,15 +285,31 @@ void print_tabs() {
 }
 
 int main() {
+	#if YYDEBUG
+        yydebug = 1;
+    #endif
 	yyparse();
 	return 0;
 }
 
 int yyerror(const char *msg) {
 	extern int yylineno;
-	printf("Parsing failed\nLine number: %d %s\n", yylineno, msg);
+	int l = tab_counter*8;
+	printf("\n");
+	//print_tabs();
+	for(int i=0; i<l;i++){
+		printf("^");
+	}
+	printf("\nError on java file line [%d] :: %s\n", yylineno, msg);
 	success = 0;
 	return 0;
+}
+
+void check_syntax_errors(){
+	if (strcmp(syntax_errors,"")){
+		yyerror(syntax_errors);
+		strcpy(syntax_errors,"");
+	}
 }
 
 
