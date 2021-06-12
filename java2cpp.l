@@ -75,7 +75,7 @@
 [$_a-zA-Z]+[$_a-zA-Z0-9]*			{strcpy(yylval.var_name, yytext);return VAR;}
 [0-9]+("."[0-9]+)?            {strcpy(yylval.var_name, yytext);return NUMBER;}
 \"[^"]*\"                     {strcpy(yylval.var_name, yytext);return QUOTED_STRING;}
-'[^']*'                       {strcpy(yylval.var_name, yytext);return QUOTED_STRING;}
+'[^']*'                       {strcpy(yylval.var_name, yytext);return QUOTED_CHAR;}
 
 
 %%
