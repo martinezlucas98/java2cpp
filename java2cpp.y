@@ -3,11 +3,13 @@
 	#include<stdlib.h>
 	#include<string.h>
 	#include<time.h>
+	#include"type_conversion.h"
 	#define YYDEBUG 0
 	#define MAX_NAME_LEN 32
 	#define MAX_VARIABLES 32
 	#define MAX_SCOPE 32
 	#define DIMENSION 20
+	#define INTNOVAL -2
 	int yylex(void);
 	int yyerror(const char *s);
 	int success = 1;
@@ -31,16 +33,32 @@
 	extern void print_tabs();
 	extern void check_syntax_errors();
 	extern void print_table_symbols();
+	extern void print_type_error_warning();
+	extern void clear_exp_vect(char c);
+	extern void add_exp_vect(char type);
+	extern void type_verification();
+	extern void add_exp_vect_var(char type);
 	char var_list[MAX_VARIABLES][MAX_NAME_LEN];	// MAX_VARIABLES variable names with each variable being atmost MAX_NAME_LEN characters long
 	int string_or_var[MAX_VARIABLES];
 	//extern int *yytext;
-	char syntax_errors[255] = "";
+	char syntax_errors[256] = "";
+
+	// type check variables
+	char type_cast_str_warning[256] = "";
+	char type_cast_str_error[256] = "";
+	int right_val_type=INTNOVAL;
+	int left_val_type=INTNOVAL;
+	#define EVLEN 256
+	char expression_vect[EVLEN+1];
+	int evtop = 0;
+	int type_verified = 0;
+
 
 	// functions
 	void print_init(){
 		time_t t = time(NULL);
   		struct tm now = *localtime(&t);
-		char *version = "alpha";
+		char *version = "alpha 1.0";
 		char *github = "https://github.com/martinezlucas98/java2cpp";
 
 		printf("/*\n*\t===================================================================\n");
@@ -96,7 +114,7 @@ STATEMENTS	: { print_tabs(); } DECLARATION STATEMENTS { }
 			| { print_tabs(); } STDIO STATEMENTS { }
 			| { print_tabs(); } BREAK_ST STATEMENTS { }
 			| { print_tabs(); } RETURN_ST STATEMENTS { }
-      | { print_tabs(); } VAR_ASSIGNATION STATEMENTS { }
+      		| VAR_ASSIGNATION STATEMENTS { }
 			| error DELIMITER STATEMENTS
 			| /* */	{ }
 			;
@@ -126,18 +144,18 @@ STDIO	: PRINTLN { printf("std::cout"); } LP { printf(" << "); } EXPRESION RP { p
 		;
 		
     // Check MUST_SEMICOLON on inputs
-SCANNER_OBJECT : SCANNER { printf("string "); } VAR { printf("%s;", yylval.var_name); } ASSIGNMENT NEW SCANNER {printf("std::cin");} LP SYS_IN RP {printf(">>");} SEMICOLON { printf("%s;", yylval.var_name); } 
+SCANNER_OBJECT : SCANNER { printf("std::string "); } VAR { printf("%s;", yylval.var_name); } ASSIGNMENT NEW SCANNER {printf("std::cin");} LP SYS_IN RP {printf(">>");} SEMICOLON { printf("%s;", yylval.var_name); } 
                ;
 
 
 MY_INPUT  : VAR ASSIGNMENT NEW SCANNER {printf("std::cin");} LP SYS_IN RP {printf(">>");} SEMICOLON { printf("%s;", yylval.var_name); } 
           ;
 
-VAR_DECLARATION	:   VAR {insert_to_table(yylval.var_name,current_data_type); printf("%s", yylval.var_name); } HAS_ASSIGNMENT MUST_SEMICOLON { printf("\n"); check_syntax_errors(); }
+VAR_DECLARATION	:   VAR {insert_to_table(yylval.var_name,current_data_type); printf("%s", yylval.var_name); {clear_exp_vect('\0');}} HAS_ASSIGNMENT MUST_SEMICOLON { printf("\n"); check_syntax_errors(); print_type_error_warning();}
 				        |   BRACKET_ARRAY VAR {insert_to_table(yylval.var_name,current_data_type);printf("%s", yylval.var_name); } HAS_ASSIGNMENT MUST_SEMICOLON { printf("\n"); check_syntax_errors(); } // shift/reduce
 				        ;
 
-VAR_ASSIGNATION	: VAR {printf("%s", yylval.var_name);verify_scope(yylval.var_name);  } ASSIGNMENT { printf(" = "); } EXPRESION MUST_SEMICOLON { printf("\n"); check_syntax_errors(); } //MUST_EXPRESSION
+VAR_ASSIGNATION	:  VAR { print_tabs(); printf("%s", yylval.var_name);verify_scope(yylval.var_name); clear_exp_vect('\0'); left_val_type = lookup_in_table(yylval.var_name);} ASSIGNMENT { printf(" = "); } MUST_EXPRESSION {type_verification();} MUST_SEMICOLON { printf("\n"); check_syntax_errors(); print_type_error_warning(); } //MUST_EXPRESSION
 				        ;
 
 BRACKET_ARRAY	: LB NUMARRAY RB  BRACKET_ARRAY
@@ -180,7 +198,7 @@ NUMARRAY	: NUMBER   { printf("[%s]", yylval.var_name); }
 			    | VAR { printf("[%s]", yylval.var_name); }
 			    ;
 
-HAS_ASSIGNMENT	: ASSIGNMENT { printf(" = "); } MUST_EXPRESSION //check this
+HAS_ASSIGNMENT	: ASSIGNMENT { printf(" = "); } MUST_EXPRESSION {type_verification();} //check this
 				        | ASSIGNMENT EXPRESION_ARRAY
 				        | /* No assignment */ {}
 				        ;
@@ -215,16 +233,16 @@ EXPRESION	: EXPRESION LAND { printf("&&"); } EXPRESION
 			| EXPRESION NEQ { printf("!="); } EXPRESION
 			| EXPRESION DEQ { printf("=="); } EXPRESION
 			| NOT { printf("!"); } EXPRESION
-			| EXPRESION PLUS { printf("+"); } EXPRESION
-			| EXPRESION MINUS { printf("-"); } EXPRESION
-			| EXPRESION MUL { printf("*"); } EXPRESION
-			| EXPRESION DIV { printf("/"); } EXPRESION
+			| EXPRESION PLUS { printf("+"); add_exp_vect('+');} EXPRESION
+			| EXPRESION MINUS { printf("-"); add_exp_vect('-');} EXPRESION
+			| EXPRESION MUL { printf("*"); add_exp_vect('*');} EXPRESION
+			| EXPRESION DIV { printf("/"); add_exp_vect('/'); } EXPRESION
 			| EXPRESION MOD { printf("%%"); } EXPRESION
-			| LP { printf("("); } EXPRESION RP { printf(")"); }
+			| LP { printf("("); add_exp_vect('(');} EXPRESION RP { printf(")"); add_exp_vect(')');}
 			| EXPRESION PLUS PLUS { printf("++"); }
 			| EXPRESION MINUS MINUS { printf("--"); }
 			| TERMINAL
-			| VAR { printf("%s", yylval.var_name); verify_scope(yylval.var_name);}
+			| VAR { printf("%s", yylval.var_name); verify_scope(yylval.var_name); add_exp_vect_var(48+lookup_in_table(yylval.var_name)); }
 			;
 
 EXPRESION_ARRAY	: NEW TYPE_NO_PRINT BRACKET_ARRAY {bracket_counter=0;}
@@ -250,15 +268,15 @@ TYPE	: INT { $$=$1; current_data_type=$1;	printf("int "); }
 		| CHAR  { $$=$1; current_data_type=$1; printf("char "); }
 		| FLOAT { $$=$1; current_data_type=$1; printf("float "); }
 		| DOUBLE { $$=$1; current_data_type=$1; printf("double "); }
-		| STRING { $$=$1; current_data_type=$1; printf("string "); }
+		| STRING { $$=$1; current_data_type=$1; printf("std::string "); }
 		| BOOLEAN { $$=$1; current_data_type=$1; printf("bool "); }
 		| VOID { printf("void "); }
 		;
 
-TERMINAL	: NUMBER { printf("%s", yylval.var_name); }
-			| QUOTED_CHAR { printf("%s", yylval.var_name); }
-			| QUOTED_STRING { printf("%s", yylval.var_name); }
-			| BOOL_VAL { printf("%s", yylval.var_name); }
+TERMINAL	: NUMBER { printf("%s", yylval.var_name); add_exp_vect(48+T_INT); }
+			| QUOTED_CHAR { printf("%s", yylval.var_name); add_exp_vect(48+T_CHAR); }
+			| QUOTED_STRING { printf("%s", yylval.var_name); add_exp_vect(48+T_STRING); }
+			| BOOL_VAL { printf("%s", yylval.var_name); add_exp_vect(48+T_BOOL); }
 			;
 
 COMMENT	: ILCOMMENT		{ printf("%s\n", yylval.var_name); }
@@ -392,6 +410,239 @@ void push_scope(char var[MAX_NAME_LEN] ){
 	}
 	strcpy(stack_scope[++stack_scope_counter],var);
 }
+
 void pop_scope(){
 	--stack_scope_counter;
+}
+
+void warning(char *msg){
+	printf("/*\n%s*/\n",msg);
+}
+
+void make_casting(char type1, char type2, char operator){
+	if(right_val_type!=T_ERROR){
+		struct T_tuple t;
+		if(type1==INTNOVAL){
+			t.warning = 0;
+			t.type = type2;
+			//printf("if\n");
+		}else{
+			//printf("type1: %c, type2: %c, operator: %c\n",type1, type2, operator);
+			t = cast_type(type1, type2, operator);
+			//printf("else\n");
+		}
+
+		//printf("t.type: %d, t.warning: %d\n",t.type, t.warning);
+		
+		if (t.warning){
+			char waux[52];
+			sprintf(waux,"Warning: Implicit type conversion to %s\n",type_to_str(48+t.type));
+			strcat(type_cast_str_warning,waux);
+		}
+
+		if (t.type == T_ERROR){
+			if(operator=='0'){
+				char *eaux;
+				sprintf(eaux,"Error: Cannot convert from %s to %s\n",type_to_str(type1), type_to_str(type2));
+				strcat(type_cast_str_error,eaux);
+			}else{
+				char eaux[56];
+				sprintf(eaux,"Error: No conversion for %s, %s with \"%c\" operator\n",type_to_str(type1), type_to_str(type2), operator);
+				strcat(type_cast_str_error,eaux);
+			}
+			
+		}
+
+		right_val_type = t.type;
+	}
+	
+
+
+}
+
+void print_type_error_warning(){
+	//left_val_type = current_data_type;
+	//type_verification();
+	if(type_verified){
+		type_verified = 0;
+		//printf("Lval: %d Rval: %d\n",left_val_type, right_val_type);
+		if (strcmp(type_cast_str_error,"")){
+			char aux[512];
+			//strcat(aux, type_cast_str_error);
+			//strcat(aux, type_cast_str_warning);
+			//yyerror(aux);
+			yyerror(type_cast_str_error);
+			strcpy(type_cast_str_error,"\0");
+		}else if(left_val_type!=right_val_type ){
+			char aux2[512];
+			char *sty1 = type_to_str(48+right_val_type);
+			char * sty2 = type_to_str(48+left_val_type);
+			if(strcmp(sty1,"ERROR") && strcmp(sty2,"ERROR")){
+				sprintf(aux2,"Error: implicit cast: Cannot cast from %s to %s\n",sty1, sty2);
+				yyerror(aux2);
+			}
+			
+		}
+
+		if(strcmp(type_cast_str_warning,"")){
+			warning(type_cast_str_warning);
+			strcpy(type_cast_str_warning,"\0");
+		}
+
+	}
+	left_val_type=INTNOVAL;
+}
+
+void clear_exp_vect(char c){
+	evtop=0;
+	for(int i = 0; i < EVLEN+1; i++){
+		expression_vect[i]='x';
+		//printf("%c",expression_vect[i]);
+	}
+	if(c!='\0'){
+		evtop=1;
+		expression_vect[0]=c;
+	}else{
+		right_val_type = INTNOVAL;
+	}
+	//printf("\nevtop: %d\n",evtop);
+}
+
+void add_exp_vect(char type){
+	expression_vect[evtop]=type;
+	//printf("\nitem: %c, index: %d\n",type, evtop);
+	evtop++;
+	
+}
+
+void add_exp_vect_var(char type){
+	if (type != 47){ // 48 - 1 ... ASCCI 48 + Ttpe and type is -1 for a var not declared in scope
+		add_exp_vect(type);
+	}
+}
+
+int find_r_paren(int p){
+	for(int i = p; i<EVLEN; i++){
+		if(expression_vect[i]==')'){
+			return i;
+		}
+	}
+	return -1;
+}
+
+int find_l_paren(int p){
+	for(int i = p; i>=0; i--){
+		if(expression_vect[i]=='('){
+			return i;
+		}
+	}
+	return -1;
+}
+
+char *split_arr(int l, int r){
+	static char s[EVLEN+1];
+	int cont = 0;
+	for(int i = l+1; i<r; i++){
+		//char c[EVLEN+1];
+		//sprintf(c,"%c",expression_vect[i]);
+		//strcat(s,c);
+		s[cont]=expression_vect[i];
+		//printf("%c",s[cont]);
+		cont++;
+	}
+	s[r]='\0';
+	return s;
+}
+
+void remerge_arr(int l, int r, int new_type){
+	int dif = r-l;
+	expression_vect[l]=48+new_type;
+	for(int i = l+1; i<EVLEN; i++){
+		if (expression_vect[i]=='x'){
+			return;
+		}
+		expression_vect[i] = expression_vect[i+dif];
+	}
+}
+
+void find_new_type(char expr[EVLEN+1], int len){
+	int i = 0;
+	if (len>=3){
+		//printf("len: %d\n",len);
+		//printf("find_new_type_expr:\n");
+		/*for(int h=0; h<len; h++){
+			printf("%c",expr[h]);
+		}*/
+		//printf("\n");
+		make_casting(expr[0],expr[2],expr[1]);
+		i = 3;
+		for (i; i < len; i=i+2){
+			//printf("i: %d\n",i);
+			//if(i+2<len){
+			make_casting(48+right_val_type,expr[i+1],expr[i]);
+			//}
+		}
+	}else{
+		make_casting(48+right_val_type,expr[0],'0');
+	}
+	
+}
+
+void type_verification(){
+	type_verified = 1;
+	//left_val_type = current_data_type;
+	left_val_type = left_val_type == INTNOVAL ? current_data_type : left_val_type;
+	int r,l,i=0;
+	//printf("INITIAL evtop: %d\n",evtop);
+	//char *sub_expr;
+	while(evtop>0){
+		r = find_r_paren(i);
+		//printf("r: %d\n",r);
+		if (r==-1){
+			for(int len=0; len<EVLEN; len++){
+				if(expression_vect[len]=='x'){
+					/*for(int x =0; x<len; x++){
+						printf("expression_vect[%d]: %c\n",x, expression_vect[x]);
+					}*/
+					//printf("len %d\n",len);
+					find_new_type(expression_vect, len);
+					len=EVLEN;
+					break;
+				}
+			}
+			//printf("\nNEW right_val_type: %d\n",right_val_type);
+			evtop=-99;
+		}else{
+			l = find_l_paren(r);
+			//printf("l: %d\n",l);
+			char sub_expr[EVLEN+1];
+			strcpy(sub_expr,split_arr(l,r));
+			//printf("r-l-1=%d\n",r-l-1);
+			/*for(int y=0; y<3; y++){
+				printf("%c",sub_expr[y]);
+			}*/
+			find_new_type(sub_expr, r-l-1);
+			/*for(int y=0; y<EVLEN; y++){
+				printf("%c",expression_vect[y]);
+			}*/
+			//printf("\nright_val_type: %d\n",right_val_type);
+			remerge_arr(l,r,right_val_type);
+			/*for(int y=0; y<EVLEN; y++){
+				printf("%c",expression_vect[y]);
+			}*/
+			//evtop = evtop - r -l + 1;
+			for(int i=0; i<EVLEN; i++){
+				if(expression_vect[i]=='x'){
+					evtop = i;
+					break;
+				}
+			}
+			i=l;
+			//printf("ok\n");
+			//printf("evtop: %d\n",evtop);
+		}
+		
+		
+	}
+	//left_val_type = INTNOVAL;
 }
