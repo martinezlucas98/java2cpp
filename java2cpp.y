@@ -35,8 +35,9 @@
 	extern void print_table_symbols();
 	extern void print_type_error_warning();
 	extern void clear_exp_vect(char c);
-	extern void add_exp_vect(char item);
+	extern void add_exp_vect(char type);
 	extern void type_verification();
+	extern void add_exp_vect_var(char type);
 	char var_list[MAX_VARIABLES][MAX_NAME_LEN];	// MAX_VARIABLES variable names with each variable being atmost MAX_NAME_LEN characters long
 	int string_or_var[MAX_VARIABLES];
 	//extern int *yytext;
@@ -154,7 +155,7 @@ VAR_DECLARATION	:   VAR {insert_to_table(yylval.var_name,current_data_type); pri
 				        |   BRACKET_ARRAY VAR {insert_to_table(yylval.var_name,current_data_type);printf("%s", yylval.var_name); } HAS_ASSIGNMENT MUST_SEMICOLON { printf("\n"); check_syntax_errors(); } // shift/reduce
 				        ;
 
-VAR_ASSIGNATION	:  VAR { print_tabs(); printf("%s", yylval.var_name);verify_scope(yylval.var_name);  } ASSIGNMENT { printf(" = "); } EXPRESION MUST_SEMICOLON { printf("\n"); check_syntax_errors(); print_type_error_warning(); print_type_error_warning();} //MUST_EXPRESSION
+VAR_ASSIGNATION	:  VAR { print_tabs(); printf("%s", yylval.var_name);verify_scope(yylval.var_name); clear_exp_vect('\0'); left_val_type = lookup_in_table(yylval.var_name);} ASSIGNMENT { printf(" = "); } MUST_EXPRESSION {type_verification();} MUST_SEMICOLON { printf("\n"); check_syntax_errors(); print_type_error_warning(); } //MUST_EXPRESSION
 				        ;
 
 BRACKET_ARRAY	: LB NUMARRAY RB  BRACKET_ARRAY
@@ -241,7 +242,7 @@ EXPRESION	: EXPRESION LAND { printf("&&"); } EXPRESION
 			| EXPRESION PLUS PLUS { printf("++"); }
 			| EXPRESION MINUS MINUS { printf("--"); }
 			| TERMINAL
-			| VAR { printf("%s", yylval.var_name); verify_scope(yylval.var_name); add_exp_vect(48+lookup_in_table(yylval.var_name)); }
+			| VAR { printf("%s", yylval.var_name); verify_scope(yylval.var_name); add_exp_vect_var(48+lookup_in_table(yylval.var_name)); }
 			;
 
 EXPRESION_ARRAY	: NEW TYPE_NO_PRINT BRACKET_ARRAY {bracket_counter=0;}
@@ -472,12 +473,15 @@ void print_type_error_warning(){
 			//yyerror(aux);
 			yyerror(type_cast_str_error);
 			strcpy(type_cast_str_error,"\0");
-		}else if(left_val_type!=right_val_type){
+		}else if(left_val_type!=right_val_type ){
 			char aux2[512];
 			char *sty1 = type_to_str(48+right_val_type);
 			char * sty2 = type_to_str(48+left_val_type);
-			sprintf(aux2,"Error: implicit cast: Cannot cast from %s to %s\n",sty1, sty2);
-			yyerror(aux2);
+			if(strcmp(sty1,"ERROR") && strcmp(sty2,"ERROR")){
+				sprintf(aux2,"Error: implicit cast: Cannot cast from %s to %s\n",sty1, sty2);
+				yyerror(aux2);
+			}
+			
 		}
 
 		if(strcmp(type_cast_str_warning,"")){
@@ -486,6 +490,7 @@ void print_type_error_warning(){
 		}
 
 	}
+	left_val_type=INTNOVAL;
 }
 
 void clear_exp_vect(char c){
@@ -503,11 +508,17 @@ void clear_exp_vect(char c){
 	//printf("\nevtop: %d\n",evtop);
 }
 
-void add_exp_vect(char item){
-	expression_vect[evtop]=item;
-	//printf("\nitem: %c, index: %d\n",item, evtop);
+void add_exp_vect(char type){
+	expression_vect[evtop]=type;
+	//printf("\nitem: %c, index: %d\n",type, evtop);
 	evtop++;
 	
+}
+
+void add_exp_vect_var(char type){
+	if (type != 47){ // 48 - 1 ... ASCCI 48 + Ttpe and type is -1 for a var not declared in scope
+		add_exp_vect(type);
+	}
 }
 
 int find_r_paren(int p){
@@ -579,7 +590,8 @@ void find_new_type(char expr[EVLEN+1], int len){
 
 void type_verification(){
 	type_verified = 1;
-	left_val_type = current_data_type;
+	//left_val_type = current_data_type;
+	left_val_type = left_val_type == INTNOVAL ? current_data_type : left_val_type;
 	int r,l,i=0;
 	//printf("INITIAL evtop: %d\n",evtop);
 	//char *sub_expr;
@@ -632,4 +644,5 @@ void type_verification(){
 		
 		
 	}
+	//left_val_type = INTNOVAL;
 }
