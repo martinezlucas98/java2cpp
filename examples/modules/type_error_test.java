@@ -6,7 +6,8 @@ public class Main {
     int x = ((1 + 'c')-("string"+2)/(3+2));
     int y = "fdfd";
     float z = a + b;
-    float zz = a+zzz;
+    //float zz = a+zzz;
+    a = "hola";
     int myvar;
   }
 }
