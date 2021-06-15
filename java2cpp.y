@@ -38,7 +38,7 @@
 	extern void add_exp_vect(char type);
 	extern void type_verification();
 	extern void add_exp_vect_var(char type);
-        extern int lookup_in_table_alt(char var[MAX_NAME_LEN]);
+    extern int lookup_in_table_alt(char var[MAX_NAME_LEN]);
 	char var_list[MAX_VARIABLES][MAX_NAME_LEN];	// MAX_VARIABLES variable names with each variable being atmost MAX_NAME_LEN characters long
 	int string_or_var[MAX_VARIABLES];
 	//extern int *yytext;
