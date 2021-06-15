@@ -38,7 +38,7 @@
 	extern void add_exp_vect(char type);
 	extern void type_verification();
 	extern void add_exp_vect_var(char type);
-	extern int lookup_in_table_alt(char var[MAX_NAME_LEN]);
+        extern int lookup_in_table_alt(char var[MAX_NAME_LEN]);
 	char var_list[MAX_VARIABLES][MAX_NAME_LEN];	// MAX_VARIABLES variable names with each variable being atmost MAX_NAME_LEN characters long
 	int string_or_var[MAX_VARIABLES];
 	//extern int *yytext;
@@ -337,8 +337,8 @@ int verify_scope(char var[MAX_NAME_LEN]){
 		yyerror("");
 		//exit(0);
 	}
-	
-	return index;
+
+        return index;
 }
 int lookup_in_table(char var[MAX_NAME_LEN])
 {
@@ -587,9 +587,9 @@ void find_new_type(char expr[EVLEN+1], int len){
 		i = 3;
 		for (i; i < len; i=i+2){
 			//printf("i: %d\n",i);
-			if(i+2<len){
+			//if(i+2<len){
 			make_casting(48+right_val_type,expr[i+1],expr[i]);
-			}
+			//}
 		}
 	}else{
 		make_casting(48+right_val_type,expr[0],'0');
@@ -599,7 +599,7 @@ void find_new_type(char expr[EVLEN+1], int len){
 
 void type_verification(){
 	type_verified = 1;
-	left_val_type = current_data_type;
+	//left_val_type = current_data_type;
 	left_val_type = left_val_type == INTNOVAL ? current_data_type : left_val_type;
 	int r,l,i=0;
 	//printf("INITIAL evtop: %d\n",evtop);
