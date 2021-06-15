@@ -3,13 +3,11 @@
 	#include<stdlib.h>
 	#include<string.h>
 	#include<time.h>
-	#include"type_conversion.h"
 	#define YYDEBUG 0
 	#define MAX_NAME_LEN 32
 	#define MAX_VARIABLES 32
 	#define MAX_SCOPE 32
 	#define DIMENSION 20
-	#define INTNOVAL -2
 	int yylex(void);
 	int yyerror(const char *s);
 	int success = 1;
@@ -38,28 +36,17 @@
 	extern void add_exp_vect(char type);
 	extern void type_verification();
 	extern void add_exp_vect_var(char type);
-        extern int lookup_in_table_alt(char var[MAX_NAME_LEN]);
+  extern int lookup_in_table_alt(char var[MAX_NAME_LEN]);
 	char var_list[MAX_VARIABLES][MAX_NAME_LEN];	// MAX_VARIABLES variable names with each variable being atmost MAX_NAME_LEN characters long
 	int string_or_var[MAX_VARIABLES];
 	//extern int *yytext;
-	char syntax_errors[256] = "";
-
-	// type check variables
-	char type_cast_str_warning[256] = "";
-	char type_cast_str_error[256] = "";
-	int right_val_type=INTNOVAL;
-	int left_val_type=INTNOVAL;
-	#define EVLEN 256
-	char expression_vect[EVLEN+1];
-	int evtop = 0;
-	int type_verified = 0;
-
+	char syntax_errors[255] = "";
 
 	// functions
 	void print_init(){
 		time_t t = time(NULL);
   		struct tm now = *localtime(&t);
-		char *version = "alpha 1.0";
+		char *version = "alpha";
 		char *github = "https://github.com/martinezlucas98/java2cpp";
 
 		printf("/*\n*\t===================================================================\n");
@@ -115,7 +102,7 @@ STATEMENTS	: { print_tabs(); } DECLARATION STATEMENTS { }
 			| { print_tabs(); } STDIO STATEMENTS { }
 			| { print_tabs(); } BREAK_ST STATEMENTS { }
 			| { print_tabs(); } RETURN_ST STATEMENTS { }
-      		| VAR_ASSIGNATION STATEMENTS { }
+      | { print_tabs(); } VAR_ASSIGNATION STATEMENTS { }
 			| error DELIMITER STATEMENTS
 			| /* */	{ }
 			;
@@ -145,18 +132,18 @@ STDIO	: PRINTLN { printf("std::cout"); } LP { printf(" << "); } EXPRESION RP { p
 		;
 		
     // Check MUST_SEMICOLON on inputs
-SCANNER_OBJECT : SCANNER { printf("std::string "); } VAR { printf("%s;", yylval.var_name); } ASSIGNMENT NEW SCANNER {printf("std::cin");} LP SYS_IN RP {printf(">>");} SEMICOLON { printf("%s;", yylval.var_name); } 
+SCANNER_OBJECT : SCANNER { printf("string "); } VAR { printf("%s;", yylval.var_name); } ASSIGNMENT NEW SCANNER {printf("std::cin");} LP SYS_IN RP {printf(">>");} SEMICOLON { printf("%s;", yylval.var_name); } 
                ;
 
 
 MY_INPUT  : VAR ASSIGNMENT NEW SCANNER {printf("std::cin");} LP SYS_IN RP {printf(">>");} SEMICOLON { printf("%s;", yylval.var_name); } 
           ;
 
-VAR_DECLARATION	:   VAR {insert_to_table(yylval.var_name,current_data_type); printf("%s", yylval.var_name); {clear_exp_vect('\0');}} HAS_ASSIGNMENT MUST_SEMICOLON { printf("\n"); check_syntax_errors(); print_type_error_warning();}
+VAR_DECLARATION	:   VAR {insert_to_table(yylval.var_name,current_data_type); printf("%s", yylval.var_name); } HAS_ASSIGNMENT MUST_SEMICOLON { printf("\n"); check_syntax_errors(); }
 				        |   BRACKET_ARRAY VAR {insert_to_table(yylval.var_name,current_data_type);printf("%s", yylval.var_name); } HAS_ASSIGNMENT MUST_SEMICOLON { printf("\n"); check_syntax_errors(); } // shift/reduce
 				        ;
 
-VAR_ASSIGNATION	:  VAR { print_tabs(); printf("%s", yylval.var_name);verify_scope(yylval.var_name); clear_exp_vect('\0'); left_val_type = lookup_in_table(yylval.var_name);} ASSIGNMENT { printf(" = "); } MUST_EXPRESSION {type_verification();} MUST_SEMICOLON { printf("\n"); check_syntax_errors(); print_type_error_warning(); } //MUST_EXPRESSION
+VAR_ASSIGNATION	: VAR {printf("%s", yylval.var_name);verify_scope(yylval.var_name);  } ASSIGNMENT { printf(" = "); } EXPRESION MUST_SEMICOLON { printf("\n"); check_syntax_errors(); } //MUST_EXPRESSION
 				        ;
 
 BRACKET_ARRAY	: LB NUMARRAY RB  BRACKET_ARRAY
@@ -199,7 +186,7 @@ NUMARRAY	: NUMBER   { printf("[%s]", yylval.var_name); }
 			    | VAR { printf("[%s]", yylval.var_name); }
 			    ;
 
-HAS_ASSIGNMENT	: ASSIGNMENT { printf(" = "); } MUST_EXPRESSION {type_verification();} //check this
+HAS_ASSIGNMENT	: ASSIGNMENT { printf(" = "); } MUST_EXPRESSION //check this
 				        | ASSIGNMENT EXPRESION_ARRAY
 				        | /* No assignment */ {}
 				        ;
@@ -269,15 +256,15 @@ TYPE	: INT { $$=$1; current_data_type=$1;	printf("int "); }
 		| CHAR  { $$=$1; current_data_type=$1; printf("char "); }
 		| FLOAT { $$=$1; current_data_type=$1; printf("float "); }
 		| DOUBLE { $$=$1; current_data_type=$1; printf("double "); }
-		| STRING { $$=$1; current_data_type=$1; printf("std::string "); }
+		| STRING { $$=$1; current_data_type=$1; printf("string "); }
 		| BOOLEAN { $$=$1; current_data_type=$1; printf("bool "); }
 		| VOID { printf("void "); }
 		;
 
-TERMINAL	: NUMBER { printf("%s", yylval.var_name); add_exp_vect(48+T_INT); }
-			| QUOTED_CHAR { printf("%s", yylval.var_name); add_exp_vect(48+T_CHAR); }
-			| QUOTED_STRING { printf("%s", yylval.var_name); add_exp_vect(48+T_STRING); }
-			| BOOL_VAL { printf("%s", yylval.var_name); add_exp_vect(48+T_BOOL); }
+TERMINAL	: NUMBER { printf("%s", yylval.var_name); }
+			| QUOTED_CHAR { printf("%s", yylval.var_name); }
+			| QUOTED_STRING { printf("%s", yylval.var_name); }
+			| BOOL_VAL { printf("%s", yylval.var_name); }
 			;
 
 COMMENT	: ILCOMMENT		{ printf("%s\n", yylval.var_name); }
@@ -418,7 +405,6 @@ void push_scope(char var[MAX_NAME_LEN] ){
 	}
 	strcpy(stack_scope[++stack_scope_counter],var);
 }
-
 void pop_scope(){
 	--stack_scope_counter;
 }
