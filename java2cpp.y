@@ -7,6 +7,7 @@
 	#define YYDEBUG 0
 	#define MAX_NAME_LEN 32
 	#define MAX_VARIABLES 32
+	#define MAX_DECL_FUN 32
 	#define MAX_SCOPE 32
 	#define DIMENSION 20
 	#define INTNOVAL -2
@@ -20,13 +21,19 @@
 	int idx = 0;
 	int table_idx = 0;
 	int tab_counter = 0;
+	int current_param_count=0;
 	char for_var[MAX_NAME_LEN];
 	char stack_scope[MAX_SCOPE][MAX_VARIABLES];
 	int stack_scope_counter=-1;
+	int table_idf=0;
 	struct symbol_table{char var_name[MAX_NAME_LEN]; int type;char scope_name[MAX_NAME_LEN];} sym[MAX_VARIABLES];
+	struct fun_table{char var_name[MAX_NAME_LEN]; int type; int type_params[MAX_VARIABLES];int counter_type_params;int is_def;} fun[MAX_DECL_FUN];
 	extern int lookup_in_table(char var[MAX_NAME_LEN]);
 	int verify_scope(char var[MAX_NAME_LEN]); // When a variable is used look first if it was declared before
 	extern void insert_to_table(char var[MAX_NAME_LEN], int type);
+	extern void insert_funtion(char var[MAX_NAME_LEN], int type,int def);
+	extern void insert_type_param(int type); // Insert the type of the current parameter or argument(literal) of the current function in the table
+	extern void insert_argument_var(char var[MAX_NAME_LEN]);// Insert the type of the rgument( not literal) of the current function in the table. Also check scope the variable
 	extern void push_scope(char var[MAX_NAME_LEN]);// Add to the stack the name of the current scope
 	extern void create_scope_name_and_push_it();//Create unique name for loops and conditional statment
 	extern void pop_scope();
@@ -39,6 +46,11 @@
 	extern void type_verification();
 	extern void add_exp_vect_var(char type);
     extern int lookup_in_table_alt(char var[MAX_NAME_LEN]);
+	extern void verify_fun_table();
+	extern void get_format_string_types(char dest[200],struct fun_table source);
+	extern void write_fun_table_header_file();
+	extern void convert_type_to_string(char dest[20],int type);
+	extern void get_format_string_types(char dest[200],struct fun_table source);
 	char var_list[MAX_VARIABLES][MAX_NAME_LEN];	// MAX_VARIABLES variable names with each variable being atmost MAX_NAME_LEN characters long
 	int string_or_var[MAX_VARIABLES];
 	//extern int *yytext;
@@ -101,7 +113,7 @@ char var_name[MAX_NAME_LEN];
 
 %%
 
-program		: { print_init(); } HAS_COMMENT MAIN_CLASS LC {push_scope("global");printf("/* start Main Class */\n"); }  STATEMENTS  RC HAS_COMMENT {pop_scope(); printf("\n/* end Main Class */\n"); exit(0); }
+program		: { print_init(); } HAS_COMMENT MAIN_CLASS LC {push_scope("global");printf("/* start Main Class */\n"); }  STATEMENTS  RC HAS_COMMENT {pop_scope(); printf("\n/* end Main Class */\n"); verify_fun_table();exit(0); }
 			| /* Empty file */	{ printf("\n"); exit(2); }
 			;
 
@@ -126,7 +138,7 @@ DECLARATION 	:IGNORE_SCOPE METHODS
 				|IGNORE_SCOPE VAR_DECLARATION 
 				;
 
-METHODS	:   VAR {push_scope(yylval.var_name);printf("%s", yylval.var_name); }LP { printf("("); } PARAMS RP { printf(")"); } LC	{ tab_counter++; printf("{\n"); } STATEMENTS RC { printf("}\n"); tab_counter--;pop_scope(); }	{ }//printf("static %s %s ( %s ) {", current_data_type, ); }
+METHODS	:   VAR {push_scope(yylval.var_name);printf("%s", yylval.var_name);insert_funtion(yylval.var_name,current_data_type,1); }LP { printf("("); } PARAMS RP { printf(")"); } LC	{ tab_counter++; printf("{\n"); } STATEMENTS RC { printf("}\n"); tab_counter--;pop_scope(); }	{ }//printf("static %s %s ( %s ) {", current_data_type, ); }
 		;
 IS_STATIC : STATIC
 			| /* */
@@ -157,6 +169,7 @@ VAR_DECLARATION	:   VAR {insert_to_table(yylval.var_name,current_data_type); pri
 				        ;
 
 VAR_ASSIGNATION	:  VAR { print_tabs(); printf("%s", yylval.var_name);verify_scope(yylval.var_name); clear_exp_vect('\0'); left_val_type = lookup_in_table(yylval.var_name);} ASSIGNMENT { printf(" = "); } MUST_EXPRESSION {type_verification();} MUST_SEMICOLON { printf("\n"); check_syntax_errors(); print_type_error_warning(); } //MUST_EXPRESSION
+					| VAR{ print_tabs(); printf("%s", yylval.var_name);insert_funtion(yylval.var_name,current_data_type,0);} LP { printf("("); } PARAMS_TYPE RP { printf(")"); } MUST_SEMICOLON { printf("\n"); check_syntax_errors(); print_type_error_warning(); }
 				        ;
 
 BRACKET_ARRAY	: LB NUMARRAY RB  BRACKET_ARRAY
@@ -218,9 +231,14 @@ PARAMS	: HAS_PARAMS PARAMS
 		    | COMA { printf(","); }  HAS_PARAMS
 		    | /* No parameters */		{ printf(" "); }
 		    ;
+PARAMS_TYPE : VAR {printf("%s", yylval.var_name);insert_argument_var( yylval.var_name);} COMA { printf(","); } PARAMS_TYPE
+			| VAR{printf("%s", yylval.var_name);insert_argument_var( yylval.var_name);}
+			| LITERAL_ARGUMENT {insert_type_param(current_data_type);} COMA { printf(","); } PARAMS_TYPE
+			| LITERAL_ARGUMENT {insert_type_param(current_data_type);} 
+			| /* empty*/
+			;
 
-
-HAS_PARAMS	: TYPE VAR {insert_to_table(yylval.var_name,current_data_type);printf("%s", yylval.var_name); }
+HAS_PARAMS	: TYPE VAR {insert_to_table(yylval.var_name,current_data_type);printf("%s", yylval.var_name);insert_type_param(current_data_type); }
 			      | TYPE  BRACKET_ARRAY VAR {insert_to_table(yylval.var_name,current_data_type); printf("%s", yylval.var_name);printf("[]");bracket_counter-- ;for(;bracket_counter>0;bracket_counter--)printf("[%d]",DIMENSION);}
 			      | /* */
 			      ;
@@ -278,6 +296,11 @@ TERMINAL	: NUMBER { printf("%s", yylval.var_name); add_exp_vect(48+T_INT); }
 			| QUOTED_CHAR { printf("%s", yylval.var_name); add_exp_vect(48+T_CHAR); }
 			| QUOTED_STRING { printf("%s", yylval.var_name); add_exp_vect(48+T_STRING); }
 			| BOOL_VAL { printf("%s", yylval.var_name); add_exp_vect(48+T_BOOL); }
+			;
+LITERAL_ARGUMENT	: NUMBER { printf("%s", yylval.var_name); current_data_type=T_INT;}
+			| QUOTED_CHAR { printf("%s", yylval.var_name); current_data_type=T_CHAR; }
+			| QUOTED_STRING { printf("%s", yylval.var_name); current_data_type=T_STRING; }
+			| BOOL_VAL { printf("%s", yylval.var_name); current_data_type=T_BOOL; }
 			;
 
 COMMENT	: ILCOMMENT		{ printf("%s\n", yylval.var_name); }
@@ -351,6 +374,8 @@ int lookup_in_table(char var[MAX_NAME_LEN])
 	return -1;
 }
 
+
+
 void insert_to_table(char var[MAX_NAME_LEN], int type)
 {	
 	if(lookup_in_table(var)==-1)
@@ -366,7 +391,27 @@ void insert_to_table(char var[MAX_NAME_LEN], int type)
 		//exit(0);
 	}
 }
+void insert_funtion(char var[MAX_NAME_LEN], int type,int is_def)
+{	
+		strcpy(fun[table_idf].var_name,var);
+		fun[table_idf].type = type;
+		fun[table_idf].is_def = is_def;
+		table_idf++;
+		
 
+}
+void insert_argument_var(char var[MAX_NAME_LEN]){
+	int type=lookup_in_table(var);
+	if(type !=-1){
+		insert_type_param(type);
+	}else{
+		printf("\nVariable not declare %s \n",var);
+		yyerror("");
+	}
+}
+void insert_type_param(int type){
+	fun[table_idf -1].type_params[fun[table_idf -1].counter_type_params++]=type;
+}
 void print_tabs() {
 	for(int i = 0; i < tab_counter; i++){
 		printf("\t");
@@ -664,4 +709,107 @@ int lookup_in_table_alt(char var[MAX_NAME_LEN])
 	}
 
 	return -1;
+}
+void verify_fun_table(){
+	struct fun_table temp;
+	for(int i=0;i<table_idf;i++){
+		if(!fun[i].is_def){
+			temp=fun[i];
+			int check=0;
+			for(int j=0;j<table_idf;j++){
+				if(fun[j].is_def){
+					if(strcmp(fun[j].var_name,temp.var_name) == 0 && fun[j].counter_type_params == temp.counter_type_params){
+						int check_type=1;
+						for(int z=0;z<temp.counter_type_params;z++){
+							if(fun[j].type_params[z] != temp.type_params[z])
+								check_type=0;
+						}
+						check =check_type?1:0;
+						
+					}
+				}
+			}	
+			if(!check){
+			char type[20]={0},arguments[200]={0};
+			convert_type_to_string(type,fun[i].type);
+			get_format_string_types(arguments,fun[i]);
+			printf("\n Function %s %s(%s) has not been declared \n",type,fun[i].var_name,arguments);
+			break;
+		}
+		}		
+	}
+	//If the loop end, everything ok
+	write_fun_table_header_file();
+
+}
+void write_fun_table_header_file(){
+	FILE *fp;
+
+   fp = fopen("fun.h", "w+");
+   char fun_decl[300];
+	for(int i=0;i<table_idf;i++){
+		if(fun[i].is_def){
+			char type[20]={0},arguments[200]={0};
+			convert_type_to_string(type,fun[i].type);
+			get_format_string_types(arguments,fun[i]);
+			sprintf(fun_decl," %s %s(%s)\n",type,fun[i].var_name,arguments);
+			fputs(fun_decl,fp);
+		}
+	}
+	fclose(fp);
+}
+void get_format_string_types(char dest[200],struct fun_table source){
+	int c=0;
+	for(int z=0;z<source.counter_type_params;z++){
+		switch(source.type_params[z]){
+			case T_INT:
+				strcat(dest,"int,");
+				c+=4;
+				break;
+			case T_CHAR:
+				strcat(dest,"char,");
+				c+=5;
+				break;
+			case T_FLOAT:
+				strcat(dest,"float,");
+				c+=6;
+				break;
+			case T_DOUBLE:
+				strcat(dest,"double,");
+				c+=7;
+				break;
+			case T_STRING:
+				strcat(dest,"string,");
+				c+=7;
+				break;
+			case T_BOOL:
+				strcat(dest,"bool,");
+				c+=5;
+				break;
+		}
+	}
+		dest[c-1]='\0'; //Remove the last coma
+
+}
+void convert_type_to_string(char dest[20],int type){
+			switch(type){
+			case T_INT:
+				strcat(dest,"int");
+				break;
+			case T_CHAR:
+				strcat(dest,"char");
+				break;
+			case T_FLOAT:
+				strcat(dest,"float");
+				break;
+			case T_DOUBLE:
+				strcat(dest,"double");
+				break;
+			case T_STRING:
+				strcat(dest,"string");
+				break;
+			case T_BOOL:
+				strcat(dest,"bool");
+				break;
+			}
 }
