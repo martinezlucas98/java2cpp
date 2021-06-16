@@ -1,3 +1,3 @@
  int funbar(int,char)
- int bar(int,char)
- string funTest(string)
+ int funbar2(int)
+ int bar()
