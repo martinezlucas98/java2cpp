@@ -6,11 +6,11 @@ public class Main {
 
 }
 
-  private static void bar(int [][] num1, char num2) {
+  private static void bar(int num1, char num2) {
         int x;
         x=2;
         funbar(x,'a');
-        funTest("test");
+        funTest("tesst");
     }
 
   public static void funTest(String test){

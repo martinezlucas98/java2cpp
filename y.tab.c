@@ -116,6 +116,10 @@
 	extern void add_exp_vect_var(char type);
     extern int lookup_in_table_alt(char var[MAX_NAME_LEN]);
 	extern void verify_fun_table();
+	extern void get_format_string_types(char dest[200],struct fun_table source);
+	extern void write_fun_table_header_file();
+	extern void convert_type_to_string(char dest[20],int type);
+	extern void get_format_string_types(char dest[200],struct fun_table source);
 	char var_list[MAX_VARIABLES][MAX_NAME_LEN];	// MAX_VARIABLES variable names with each variable being atmost MAX_NAME_LEN characters long
 	int string_or_var[MAX_VARIABLES];
 	//extern int *yytext;
@@ -149,7 +153,7 @@
 	}
 
 
-#line 153 "y.tab.c"
+#line 157 "y.tab.c"
 
 # ifndef YY_CAST
 #  ifdef __cplusplus
@@ -324,12 +328,12 @@ extern int yydebug;
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 union YYSTYPE
 {
-#line 84 "java2cpp.y"
+#line 88 "java2cpp.y"
 
 int data_type;
 char var_name[MAX_NAME_LEN];
 
-#line 333 "y.tab.c"
+#line 337 "y.tab.c"
 
 };
 typedef union YYSTYPE YYSTYPE;
@@ -710,29 +714,29 @@ static const yytype_int8 yytranslate[] =
   /* YYRLINE[YYN] -- Source line where rule number YYN was defined.  */
 static const yytype_int16 yyrline[] =
 {
-       0,   112,   112,   112,   112,   113,   116,   116,   117,   117,
-     118,   118,   119,   119,   120,   120,   121,   121,   122,   122,
-     123,   123,   124,   124,   125,   125,   126,   127,   128,   131,
-     133,   134,   137,   137,   137,   137,   137,   137,   139,   140,
-     143,   143,   146,   146,   149,   149,   149,   149,   150,   150,
-     150,   151,   152,   156,   156,   156,   156,   156,   160,   160,
-     160,   163,   163,   164,   164,   167,   167,   167,   167,   168,
-     168,   168,   168,   171,   172,   172,   173,   177,   177,   177,
-     177,   180,   180,   181,   181,   181,   181,   181,   182,   185,
-     185,   185,   190,   190,   190,   193,   194,   194,   194,   197,
-     198,   198,   199,   199,   200,   203,   203,   203,   203,   207,
-     208,   211,   211,   212,   213,   216,   216,   216,   221,   222,
-     223,   226,   227,   227,   228,   230,   230,   230,   231,   232,
-     232,   232,   233,   234,   237,   238,   239,   242,   242,   243,
-     243,   244,   244,   245,   245,   246,   246,   247,   247,   248,
-     248,   249,   249,   250,   250,   251,   251,   252,   252,   253,
-     253,   254,   254,   255,   255,   256,   256,   257,   258,   259,
-     260,   263,   264,   264,   264,   267,   267,   268,   268,   268,
-     268,   269,   269,   269,   270,   271,   274,   275,   276,   277,
-     278,   279,   282,   283,   284,   285,   286,   287,   288,   291,
-     292,   293,   294,   296,   297,   298,   299,   302,   303,   306,
-     307,   310,   311,   314,   315,   318,   319,   322,   323,   323,
-     324,   324,   325
+       0,   116,   116,   116,   116,   117,   120,   120,   121,   121,
+     122,   122,   123,   123,   124,   124,   125,   125,   126,   126,
+     127,   127,   128,   128,   129,   129,   130,   131,   132,   135,
+     137,   138,   141,   141,   141,   141,   141,   141,   143,   144,
+     147,   147,   150,   150,   153,   153,   153,   153,   154,   154,
+     154,   155,   156,   160,   160,   160,   160,   160,   164,   164,
+     164,   167,   167,   168,   168,   171,   171,   171,   171,   172,
+     172,   172,   172,   175,   176,   176,   177,   181,   181,   181,
+     181,   184,   184,   185,   185,   185,   185,   185,   186,   189,
+     189,   189,   194,   194,   194,   197,   198,   198,   198,   201,
+     202,   202,   203,   203,   204,   207,   207,   207,   207,   211,
+     212,   215,   215,   216,   217,   220,   220,   220,   225,   226,
+     227,   230,   231,   231,   232,   234,   234,   234,   235,   236,
+     236,   236,   237,   238,   241,   242,   243,   246,   246,   247,
+     247,   248,   248,   249,   249,   250,   250,   251,   251,   252,
+     252,   253,   253,   254,   254,   255,   255,   256,   256,   257,
+     257,   258,   258,   259,   259,   260,   260,   261,   262,   263,
+     264,   267,   268,   268,   268,   271,   271,   272,   272,   272,
+     272,   273,   273,   273,   274,   275,   278,   279,   280,   281,
+     282,   283,   286,   287,   288,   289,   290,   291,   292,   295,
+     296,   297,   298,   300,   301,   302,   303,   306,   307,   310,
+     311,   314,   315,   318,   319,   322,   323,   326,   327,   327,
+     328,   328,   329
 };
 #endif
 
@@ -1801,997 +1805,997 @@ yyreduce:
   switch (yyn)
     {
   case 2:
-#line 112 "java2cpp.y"
+#line 116 "java2cpp.y"
                   { print_init(); }
-#line 1807 "y.tab.c"
+#line 1811 "y.tab.c"
     break;
 
   case 3:
-#line 112 "java2cpp.y"
+#line 116 "java2cpp.y"
                                                               {push_scope("global");printf("/* start Main Class */\n"); }
-#line 1813 "y.tab.c"
+#line 1817 "y.tab.c"
     break;
 
   case 4:
-#line 112 "java2cpp.y"
+#line 116 "java2cpp.y"
                                                                                                                                                       {pop_scope(); printf("\n/* end Main Class */\n"); verify_fun_table();exit(0); }
-#line 1819 "y.tab.c"
+#line 1823 "y.tab.c"
     break;
 
   case 5:
-#line 113 "java2cpp.y"
+#line 117 "java2cpp.y"
                                                 { printf("\n"); exit(2); }
-#line 1825 "y.tab.c"
+#line 1829 "y.tab.c"
     break;
 
   case 6:
-#line 116 "java2cpp.y"
+#line 120 "java2cpp.y"
                   { print_tabs(); }
-#line 1831 "y.tab.c"
+#line 1835 "y.tab.c"
     break;
 
   case 7:
-#line 116 "java2cpp.y"
+#line 120 "java2cpp.y"
                                                            { }
-#line 1837 "y.tab.c"
+#line 1841 "y.tab.c"
     break;
 
   case 8:
-#line 117 "java2cpp.y"
+#line 121 "java2cpp.y"
                           { print_tabs(); }
-#line 1843 "y.tab.c"
+#line 1847 "y.tab.c"
     break;
 
   case 9:
-#line 117 "java2cpp.y"
+#line 121 "java2cpp.y"
                                                                                { }
-#line 1849 "y.tab.c"
+#line 1853 "y.tab.c"
     break;
 
   case 10:
-#line 118 "java2cpp.y"
+#line 122 "java2cpp.y"
                           { print_tabs(); }
-#line 1855 "y.tab.c"
+#line 1859 "y.tab.c"
     break;
 
   case 11:
-#line 118 "java2cpp.y"
+#line 122 "java2cpp.y"
                                                                { }
-#line 1861 "y.tab.c"
+#line 1865 "y.tab.c"
     break;
 
   case 12:
-#line 119 "java2cpp.y"
+#line 123 "java2cpp.y"
                           { print_tabs(); }
-#line 1867 "y.tab.c"
+#line 1871 "y.tab.c"
     break;
 
   case 13:
-#line 119 "java2cpp.y"
+#line 123 "java2cpp.y"
                                                                     { }
-#line 1873 "y.tab.c"
+#line 1877 "y.tab.c"
     break;
 
   case 14:
-#line 120 "java2cpp.y"
+#line 124 "java2cpp.y"
                           { print_tabs(); }
-#line 1879 "y.tab.c"
+#line 1883 "y.tab.c"
     break;
 
   case 15:
-#line 120 "java2cpp.y"
+#line 124 "java2cpp.y"
                                                                 { }
-#line 1885 "y.tab.c"
+#line 1889 "y.tab.c"
     break;
 
   case 16:
-#line 121 "java2cpp.y"
+#line 125 "java2cpp.y"
                           { print_tabs(); }
-#line 1891 "y.tab.c"
+#line 1895 "y.tab.c"
     break;
 
   case 17:
-#line 121 "java2cpp.y"
+#line 125 "java2cpp.y"
                                                                   { }
-#line 1897 "y.tab.c"
+#line 1901 "y.tab.c"
     break;
 
   case 18:
-#line 122 "java2cpp.y"
+#line 126 "java2cpp.y"
                           { print_tabs(); }
-#line 1903 "y.tab.c"
+#line 1907 "y.tab.c"
     break;
 
   case 19:
-#line 122 "java2cpp.y"
+#line 126 "java2cpp.y"
                                                                      { }
-#line 1909 "y.tab.c"
+#line 1913 "y.tab.c"
     break;
 
   case 20:
-#line 123 "java2cpp.y"
+#line 127 "java2cpp.y"
                           { print_tabs(); }
-#line 1915 "y.tab.c"
+#line 1919 "y.tab.c"
     break;
 
   case 21:
-#line 123 "java2cpp.y"
+#line 127 "java2cpp.y"
                                                              { }
-#line 1921 "y.tab.c"
+#line 1925 "y.tab.c"
     break;
 
   case 22:
-#line 124 "java2cpp.y"
+#line 128 "java2cpp.y"
                           { print_tabs(); }
-#line 1927 "y.tab.c"
+#line 1931 "y.tab.c"
     break;
 
   case 23:
-#line 124 "java2cpp.y"
+#line 128 "java2cpp.y"
                                                                 { }
-#line 1933 "y.tab.c"
+#line 1937 "y.tab.c"
     break;
 
   case 24:
-#line 125 "java2cpp.y"
+#line 129 "java2cpp.y"
                           { print_tabs(); }
-#line 1939 "y.tab.c"
+#line 1943 "y.tab.c"
     break;
 
   case 25:
-#line 125 "java2cpp.y"
+#line 129 "java2cpp.y"
                                                                  { }
-#line 1945 "y.tab.c"
+#line 1949 "y.tab.c"
     break;
 
   case 26:
-#line 126 "java2cpp.y"
+#line 130 "java2cpp.y"
                                              { }
-#line 1951 "y.tab.c"
+#line 1955 "y.tab.c"
     break;
 
   case 28:
-#line 128 "java2cpp.y"
+#line 132 "java2cpp.y"
                                 { }
-#line 1957 "y.tab.c"
+#line 1961 "y.tab.c"
     break;
 
   case 32:
-#line 137 "java2cpp.y"
+#line 141 "java2cpp.y"
                 {push_scope(yylval.var_name);printf("%s", yylval.var_name);insert_funtion(yylval.var_name,current_data_type,1); }
-#line 1963 "y.tab.c"
+#line 1967 "y.tab.c"
     break;
 
   case 33:
-#line 137 "java2cpp.y"
+#line 141 "java2cpp.y"
                                                                                                                                     { printf("("); }
-#line 1969 "y.tab.c"
+#line 1973 "y.tab.c"
     break;
 
   case 34:
-#line 137 "java2cpp.y"
+#line 141 "java2cpp.y"
                                                                                                                                                                { printf(")"); }
-#line 1975 "y.tab.c"
+#line 1979 "y.tab.c"
     break;
 
   case 35:
-#line 137 "java2cpp.y"
+#line 141 "java2cpp.y"
                                                                                                                                                                                         { tab_counter++; printf("{\n"); }
-#line 1981 "y.tab.c"
+#line 1985 "y.tab.c"
     break;
 
   case 36:
-#line 137 "java2cpp.y"
+#line 141 "java2cpp.y"
                                                                                                                                                                                                                                         { printf("}\n"); tab_counter--;pop_scope(); }
-#line 1987 "y.tab.c"
+#line 1991 "y.tab.c"
     break;
 
   case 37:
-#line 137 "java2cpp.y"
+#line 141 "java2cpp.y"
                                                                                                                                                                                                                                                                                         { }
-#line 1993 "y.tab.c"
+#line 1997 "y.tab.c"
     break;
 
   case 40:
-#line 143 "java2cpp.y"
+#line 147 "java2cpp.y"
                          { printf("return "); }
-#line 1999 "y.tab.c"
+#line 2003 "y.tab.c"
     break;
 
   case 41:
-#line 143 "java2cpp.y"
+#line 147 "java2cpp.y"
                                                                          { printf("\n"); }
-#line 2005 "y.tab.c"
+#line 2009 "y.tab.c"
     break;
 
   case 42:
-#line 146 "java2cpp.y"
+#line 150 "java2cpp.y"
                         { printf("break"); }
-#line 2011 "y.tab.c"
+#line 2015 "y.tab.c"
     break;
 
   case 43:
-#line 146 "java2cpp.y"
+#line 150 "java2cpp.y"
                                                             { printf("\n"); }
-#line 2017 "y.tab.c"
+#line 2021 "y.tab.c"
     break;
 
   case 44:
-#line 149 "java2cpp.y"
+#line 153 "java2cpp.y"
                   { printf("std::cout"); }
-#line 2023 "y.tab.c"
+#line 2027 "y.tab.c"
     break;
 
   case 45:
-#line 149 "java2cpp.y"
+#line 153 "java2cpp.y"
                                               { printf(" << "); }
-#line 2029 "y.tab.c"
+#line 2033 "y.tab.c"
     break;
 
   case 46:
-#line 149 "java2cpp.y"
+#line 153 "java2cpp.y"
                                                                                { printf(" <<  std::endl"); }
-#line 2035 "y.tab.c"
+#line 2039 "y.tab.c"
     break;
 
   case 47:
-#line 149 "java2cpp.y"
+#line 153 "java2cpp.y"
                                                                                                                             { printf("\n"); }
-#line 2041 "y.tab.c"
+#line 2045 "y.tab.c"
     break;
 
   case 48:
-#line 150 "java2cpp.y"
+#line 154 "java2cpp.y"
                         { printf("std::cout"); }
-#line 2047 "y.tab.c"
+#line 2051 "y.tab.c"
     break;
 
   case 49:
-#line 150 "java2cpp.y"
+#line 154 "java2cpp.y"
                                                     { printf(" << "); }
-#line 2053 "y.tab.c"
+#line 2057 "y.tab.c"
     break;
 
   case 50:
-#line 150 "java2cpp.y"
+#line 154 "java2cpp.y"
                                                                                                     { printf("\n"); }
-#line 2059 "y.tab.c"
+#line 2063 "y.tab.c"
     break;
 
   case 53:
-#line 156 "java2cpp.y"
+#line 160 "java2cpp.y"
                          { printf("std::string "); }
-#line 2065 "y.tab.c"
+#line 2069 "y.tab.c"
     break;
 
   case 54:
-#line 156 "java2cpp.y"
+#line 160 "java2cpp.y"
                                                          { printf("%s;", yylval.var_name); }
-#line 2071 "y.tab.c"
+#line 2075 "y.tab.c"
     break;
 
   case 55:
-#line 156 "java2cpp.y"
+#line 160 "java2cpp.y"
                                                                                                                     {printf("std::cin");}
-#line 2077 "y.tab.c"
+#line 2081 "y.tab.c"
     break;
 
   case 56:
-#line 156 "java2cpp.y"
+#line 160 "java2cpp.y"
                                                                                                                                                        {printf(">>");}
-#line 2083 "y.tab.c"
+#line 2087 "y.tab.c"
     break;
 
   case 57:
-#line 156 "java2cpp.y"
+#line 160 "java2cpp.y"
                                                                                                                                                                                  { printf("%s;", yylval.var_name); }
-#line 2089 "y.tab.c"
+#line 2093 "y.tab.c"
     break;
 
   case 58:
-#line 160 "java2cpp.y"
+#line 164 "java2cpp.y"
                                        {printf("std::cin");}
-#line 2095 "y.tab.c"
+#line 2099 "y.tab.c"
     break;
 
   case 59:
-#line 160 "java2cpp.y"
+#line 164 "java2cpp.y"
                                                                           {printf(">>");}
-#line 2101 "y.tab.c"
+#line 2105 "y.tab.c"
     break;
 
   case 60:
-#line 160 "java2cpp.y"
+#line 164 "java2cpp.y"
                                                                                                     { printf("%s;", yylval.var_name); }
-#line 2107 "y.tab.c"
+#line 2111 "y.tab.c"
     break;
 
   case 61:
-#line 163 "java2cpp.y"
+#line 167 "java2cpp.y"
                         {insert_to_table(yylval.var_name,current_data_type); printf("%s", yylval.var_name); {clear_exp_vect('\0');}}
-#line 2113 "y.tab.c"
+#line 2117 "y.tab.c"
     break;
 
   case 62:
-#line 163 "java2cpp.y"
+#line 167 "java2cpp.y"
                                                                                                                                                                    { printf("\n"); check_syntax_errors(); print_type_error_warning();}
-#line 2119 "y.tab.c"
+#line 2123 "y.tab.c"
     break;
 
   case 63:
-#line 164 "java2cpp.y"
+#line 168 "java2cpp.y"
                                                               {insert_to_table(yylval.var_name,current_data_type);printf("%s", yylval.var_name); }
-#line 2125 "y.tab.c"
+#line 2129 "y.tab.c"
     break;
 
   case 64:
-#line 164 "java2cpp.y"
+#line 168 "java2cpp.y"
                                                                                                                                                                                  { printf("\n"); check_syntax_errors(); }
-#line 2131 "y.tab.c"
+#line 2135 "y.tab.c"
     break;
 
   case 65:
-#line 167 "java2cpp.y"
+#line 171 "java2cpp.y"
                        { print_tabs(); printf("%s", yylval.var_name);verify_scope(yylval.var_name); clear_exp_vect('\0'); left_val_type = lookup_in_table(yylval.var_name);}
-#line 2137 "y.tab.c"
+#line 2141 "y.tab.c"
     break;
 
   case 66:
-#line 167 "java2cpp.y"
+#line 171 "java2cpp.y"
                                                                                                                                                                                         { printf(" = "); }
-#line 2143 "y.tab.c"
+#line 2147 "y.tab.c"
     break;
 
   case 67:
-#line 167 "java2cpp.y"
+#line 171 "java2cpp.y"
                                                                                                                                                                                                                            {type_verification();}
-#line 2149 "y.tab.c"
+#line 2153 "y.tab.c"
     break;
 
   case 68:
-#line 167 "java2cpp.y"
+#line 171 "java2cpp.y"
                                                                                                                                                                                                                                                                  { printf("\n"); check_syntax_errors(); print_type_error_warning(); }
-#line 2155 "y.tab.c"
+#line 2159 "y.tab.c"
     break;
 
   case 69:
-#line 168 "java2cpp.y"
+#line 172 "java2cpp.y"
                                              { print_tabs(); printf("%s", yylval.var_name);insert_funtion(yylval.var_name,current_data_type,0);}
-#line 2161 "y.tab.c"
+#line 2165 "y.tab.c"
     break;
 
   case 70:
-#line 168 "java2cpp.y"
+#line 172 "java2cpp.y"
                                                                                                                                                     { printf("("); }
-#line 2167 "y.tab.c"
+#line 2171 "y.tab.c"
     break;
 
   case 71:
-#line 168 "java2cpp.y"
+#line 172 "java2cpp.y"
                                                                                                                                                                                     { printf(")"); }
-#line 2173 "y.tab.c"
+#line 2177 "y.tab.c"
     break;
 
   case 72:
-#line 168 "java2cpp.y"
+#line 172 "java2cpp.y"
                                                                                                                                                                                                                     { printf("\n"); check_syntax_errors(); print_type_error_warning(); }
-#line 2179 "y.tab.c"
+#line 2183 "y.tab.c"
     break;
 
   case 74:
-#line 172 "java2cpp.y"
+#line 176 "java2cpp.y"
                                   { bracket_counter++; }
-#line 2185 "y.tab.c"
+#line 2189 "y.tab.c"
     break;
 
   case 77:
-#line 177 "java2cpp.y"
+#line 181 "java2cpp.y"
                         { printf("if (");create_scope_name_and_push_it(); }
-#line 2191 "y.tab.c"
+#line 2195 "y.tab.c"
     break;
 
   case 78:
-#line 177 "java2cpp.y"
+#line 181 "java2cpp.y"
                                                                                                   { tab_counter++; printf(") {\n"); check_syntax_errors(); }
-#line 2197 "y.tab.c"
+#line 2201 "y.tab.c"
     break;
 
   case 79:
-#line 177 "java2cpp.y"
+#line 181 "java2cpp.y"
                                                                                                                                                                            { pop_scope();tab_counter--; print_tabs(); printf("}"); }
-#line 2203 "y.tab.c"
+#line 2207 "y.tab.c"
     break;
 
   case 81:
-#line 180 "java2cpp.y"
+#line 184 "java2cpp.y"
                           {create_scope_name_and_push_it(); tab_counter++; printf(" else {\n"); }
-#line 2209 "y.tab.c"
+#line 2213 "y.tab.c"
     break;
 
   case 82:
-#line 180 "java2cpp.y"
+#line 184 "java2cpp.y"
                                                                                                                 {pop_scope();tab_counter--; print_tabs(); printf("}"); }
-#line 2215 "y.tab.c"
+#line 2219 "y.tab.c"
     break;
 
   case 83:
-#line 181 "java2cpp.y"
+#line 185 "java2cpp.y"
                                             { printf(" else if ("); }
-#line 2221 "y.tab.c"
+#line 2225 "y.tab.c"
     break;
 
   case 84:
-#line 181 "java2cpp.y"
+#line 185 "java2cpp.y"
                                                                                          { printf(")"); check_syntax_errors(); }
-#line 2227 "y.tab.c"
+#line 2231 "y.tab.c"
     break;
 
   case 85:
-#line 181 "java2cpp.y"
+#line 185 "java2cpp.y"
                                                                                                                                     {create_scope_name_and_push_it();tab_counter++; printf(") {\n"); }
-#line 2233 "y.tab.c"
+#line 2237 "y.tab.c"
     break;
 
   case 86:
-#line 181 "java2cpp.y"
+#line 185 "java2cpp.y"
                                                                                                                                                                                                                      { pop_scope();tab_counter--;print_tabs(); printf("}"); }
-#line 2239 "y.tab.c"
+#line 2243 "y.tab.c"
     break;
 
   case 88:
-#line 182 "java2cpp.y"
+#line 186 "java2cpp.y"
                                         { printf("\n"); }
-#line 2245 "y.tab.c"
+#line 2249 "y.tab.c"
     break;
 
   case 89:
-#line 185 "java2cpp.y"
+#line 189 "java2cpp.y"
                        {create_scope_name_and_push_it();printf("while ("); }
-#line 2251 "y.tab.c"
+#line 2255 "y.tab.c"
     break;
 
   case 90:
-#line 185 "java2cpp.y"
+#line 189 "java2cpp.y"
                                                                                              { tab_counter++; printf("){\n"); }
-#line 2257 "y.tab.c"
+#line 2261 "y.tab.c"
     break;
 
   case 91:
-#line 185 "java2cpp.y"
+#line 189 "java2cpp.y"
                                                                                                                                               {pop_scope();tab_counter--; print_tabs(); printf("}\n"); }
-#line 2263 "y.tab.c"
+#line 2267 "y.tab.c"
     break;
 
   case 92:
-#line 190 "java2cpp.y"
+#line 194 "java2cpp.y"
                          {create_scope_name_and_push_it(); printf("for ("); }
-#line 2269 "y.tab.c"
+#line 2273 "y.tab.c"
     break;
 
   case 93:
-#line 190 "java2cpp.y"
+#line 194 "java2cpp.y"
                                                                                                { tab_counter++; printf(") {\n"); check_syntax_errors(); }
-#line 2275 "y.tab.c"
+#line 2279 "y.tab.c"
     break;
 
   case 94:
-#line 190 "java2cpp.y"
+#line 194 "java2cpp.y"
                                                                                                                                                                         {pop_scope(); tab_counter--; print_tabs(); printf("}\n"); }
-#line 2281 "y.tab.c"
+#line 2285 "y.tab.c"
     break;
 
   case 96:
-#line 194 "java2cpp.y"
+#line 198 "java2cpp.y"
                                          { printf("%s", yylval.var_name); }
-#line 2287 "y.tab.c"
+#line 2291 "y.tab.c"
     break;
 
   case 97:
-#line 194 "java2cpp.y"
+#line 198 "java2cpp.y"
                                                                             { printf(" : "); }
-#line 2293 "y.tab.c"
+#line 2297 "y.tab.c"
     break;
 
   case 98:
-#line 194 "java2cpp.y"
+#line 198 "java2cpp.y"
                                                                                                    { printf("%s", yylval.var_name); }
-#line 2299 "y.tab.c"
+#line 2303 "y.tab.c"
     break;
 
   case 100:
-#line 198 "java2cpp.y"
+#line 202 "java2cpp.y"
                                    {insert_to_table(yylval.var_name,current_data_type); printf("%s", yylval.var_name); }
-#line 2305 "y.tab.c"
+#line 2309 "y.tab.c"
     break;
 
   case 102:
-#line 199 "java2cpp.y"
+#line 203 "java2cpp.y"
                               {verify_scope(yylval.var_name);printf("%s", yylval.var_name); }
-#line 2311 "y.tab.c"
+#line 2315 "y.tab.c"
     break;
 
   case 104:
-#line 200 "java2cpp.y"
+#line 204 "java2cpp.y"
                                  { }
-#line 2317 "y.tab.c"
+#line 2321 "y.tab.c"
     break;
 
   case 105:
-#line 203 "java2cpp.y"
+#line 207 "java2cpp.y"
                         { printf("do{\n"); tab_counter++;}
-#line 2323 "y.tab.c"
+#line 2327 "y.tab.c"
     break;
 
   case 106:
-#line 203 "java2cpp.y"
+#line 207 "java2cpp.y"
                                                                                   {tab_counter--; print_tabs(); printf("}while("); }
-#line 2329 "y.tab.c"
+#line 2333 "y.tab.c"
     break;
 
   case 107:
-#line 203 "java2cpp.y"
+#line 207 "java2cpp.y"
                                                                                                                                                   { printf(")"); }
-#line 2335 "y.tab.c"
+#line 2339 "y.tab.c"
     break;
 
   case 108:
-#line 203 "java2cpp.y"
+#line 207 "java2cpp.y"
                                                                                                                                                                                   { printf("\n"); }
-#line 2341 "y.tab.c"
+#line 2345 "y.tab.c"
     break;
 
   case 109:
-#line 207 "java2cpp.y"
+#line 211 "java2cpp.y"
                            { printf("[%s]", yylval.var_name); }
-#line 2347 "y.tab.c"
+#line 2351 "y.tab.c"
     break;
 
   case 110:
-#line 208 "java2cpp.y"
+#line 212 "java2cpp.y"
                                   { printf("[%s]", yylval.var_name); }
-#line 2353 "y.tab.c"
+#line 2357 "y.tab.c"
     break;
 
   case 111:
-#line 211 "java2cpp.y"
+#line 215 "java2cpp.y"
                              { printf(" = "); }
-#line 2359 "y.tab.c"
+#line 2363 "y.tab.c"
     break;
 
   case 112:
-#line 211 "java2cpp.y"
+#line 215 "java2cpp.y"
                                                                 {type_verification();}
-#line 2365 "y.tab.c"
+#line 2369 "y.tab.c"
     break;
 
   case 114:
-#line 213 "java2cpp.y"
+#line 217 "java2cpp.y"
                                                               {}
-#line 2371 "y.tab.c"
+#line 2375 "y.tab.c"
     break;
 
   case 115:
-#line 216 "java2cpp.y"
+#line 220 "java2cpp.y"
                                       { push_scope("main");printf("int main(int argc, char **argv)"); }
-#line 2377 "y.tab.c"
+#line 2381 "y.tab.c"
     break;
 
   case 116:
-#line 216 "java2cpp.y"
+#line 220 "java2cpp.y"
                                                                                                            { tab_counter++; printf("{\n"); }
-#line 2383 "y.tab.c"
+#line 2387 "y.tab.c"
     break;
 
   case 117:
-#line 216 "java2cpp.y"
+#line 220 "java2cpp.y"
                                                                                                                                                            { printf("\n}\n"); tab_counter--; pop_scope();}
-#line 2389 "y.tab.c"
+#line 2393 "y.tab.c"
     break;
 
   case 122:
-#line 227 "java2cpp.y"
+#line 231 "java2cpp.y"
                            { printf(","); }
-#line 2395 "y.tab.c"
+#line 2399 "y.tab.c"
     break;
 
   case 124:
-#line 228 "java2cpp.y"
+#line 232 "java2cpp.y"
                                                         { printf(" "); }
-#line 2401 "y.tab.c"
+#line 2405 "y.tab.c"
     break;
 
   case 125:
-#line 230 "java2cpp.y"
+#line 234 "java2cpp.y"
                   {printf("%s", yylval.var_name);insert_argument_var( yylval.var_name);}
-#line 2407 "y.tab.c"
+#line 2411 "y.tab.c"
     break;
 
   case 126:
-#line 230 "java2cpp.y"
+#line 234 "java2cpp.y"
                                                                                               { printf(","); }
-#line 2413 "y.tab.c"
+#line 2417 "y.tab.c"
     break;
 
   case 128:
-#line 231 "java2cpp.y"
+#line 235 "java2cpp.y"
                              {printf("%s", yylval.var_name);insert_argument_var( yylval.var_name);}
-#line 2419 "y.tab.c"
+#line 2423 "y.tab.c"
     break;
 
   case 129:
-#line 232 "java2cpp.y"
+#line 236 "java2cpp.y"
                                            {insert_type_param(current_data_type);}
-#line 2425 "y.tab.c"
+#line 2429 "y.tab.c"
     break;
 
   case 130:
-#line 232 "java2cpp.y"
+#line 236 "java2cpp.y"
                                                                                         { printf(","); }
-#line 2431 "y.tab.c"
+#line 2435 "y.tab.c"
     break;
 
   case 132:
-#line 233 "java2cpp.y"
+#line 237 "java2cpp.y"
                                            {insert_type_param(current_data_type);}
-#line 2437 "y.tab.c"
+#line 2441 "y.tab.c"
     break;
 
   case 134:
-#line 237 "java2cpp.y"
+#line 241 "java2cpp.y"
                            {insert_to_table(yylval.var_name,current_data_type);printf("%s", yylval.var_name);insert_type_param(current_data_type); }
-#line 2443 "y.tab.c"
+#line 2447 "y.tab.c"
     break;
 
   case 135:
-#line 238 "java2cpp.y"
+#line 242 "java2cpp.y"
                                                         {insert_to_table(yylval.var_name,current_data_type); printf("%s", yylval.var_name);printf("[]");bracket_counter-- ;for(;bracket_counter>0;bracket_counter--)printf("[%d]",DIMENSION);}
-#line 2449 "y.tab.c"
+#line 2453 "y.tab.c"
     break;
 
   case 137:
-#line 242 "java2cpp.y"
+#line 246 "java2cpp.y"
                                  { printf(" && "); }
-#line 2455 "y.tab.c"
+#line 2459 "y.tab.c"
     break;
 
   case 139:
-#line 243 "java2cpp.y"
+#line 247 "java2cpp.y"
                                         { printf(" || "); }
-#line 2461 "y.tab.c"
+#line 2465 "y.tab.c"
     break;
 
   case 141:
-#line 244 "java2cpp.y"
+#line 248 "java2cpp.y"
                                         { printf(" <= "); }
-#line 2467 "y.tab.c"
+#line 2471 "y.tab.c"
     break;
 
   case 143:
-#line 245 "java2cpp.y"
+#line 249 "java2cpp.y"
                                         { printf(" >= "); }
-#line 2473 "y.tab.c"
+#line 2477 "y.tab.c"
     break;
 
   case 145:
-#line 246 "java2cpp.y"
+#line 250 "java2cpp.y"
                                        { printf(" > "); }
-#line 2479 "y.tab.c"
+#line 2483 "y.tab.c"
     break;
 
   case 147:
-#line 247 "java2cpp.y"
+#line 251 "java2cpp.y"
                                        { printf(" < "); }
-#line 2485 "y.tab.c"
+#line 2489 "y.tab.c"
     break;
 
   case 149:
-#line 248 "java2cpp.y"
+#line 252 "java2cpp.y"
                                         { printf(" != "); }
-#line 2491 "y.tab.c"
+#line 2495 "y.tab.c"
     break;
 
   case 151:
-#line 249 "java2cpp.y"
+#line 253 "java2cpp.y"
                                         { printf(" == "); }
-#line 2497 "y.tab.c"
+#line 2501 "y.tab.c"
     break;
 
   case 153:
-#line 250 "java2cpp.y"
+#line 254 "java2cpp.y"
                               { printf("!"); }
-#line 2503 "y.tab.c"
+#line 2507 "y.tab.c"
     break;
 
   case 155:
-#line 251 "java2cpp.y"
+#line 255 "java2cpp.y"
                                          { printf(" + "); add_exp_vect('+');}
-#line 2509 "y.tab.c"
+#line 2513 "y.tab.c"
     break;
 
   case 157:
-#line 252 "java2cpp.y"
+#line 256 "java2cpp.y"
                                           { printf(" - "); add_exp_vect('-');}
-#line 2515 "y.tab.c"
+#line 2519 "y.tab.c"
     break;
 
   case 159:
-#line 253 "java2cpp.y"
+#line 257 "java2cpp.y"
                                         { printf(" * "); add_exp_vect('*');}
-#line 2521 "y.tab.c"
+#line 2525 "y.tab.c"
     break;
 
   case 161:
-#line 254 "java2cpp.y"
+#line 258 "java2cpp.y"
                                         { printf(" / "); add_exp_vect('/'); }
-#line 2527 "y.tab.c"
+#line 2531 "y.tab.c"
     break;
 
   case 163:
-#line 255 "java2cpp.y"
+#line 259 "java2cpp.y"
                                         { printf(" %% "); }
-#line 2533 "y.tab.c"
+#line 2537 "y.tab.c"
     break;
 
   case 165:
-#line 256 "java2cpp.y"
+#line 260 "java2cpp.y"
                              { printf("("); add_exp_vect('(');}
-#line 2539 "y.tab.c"
+#line 2543 "y.tab.c"
     break;
 
   case 166:
-#line 256 "java2cpp.y"
+#line 260 "java2cpp.y"
                                                                              { printf(")"); add_exp_vect(')');}
-#line 2545 "y.tab.c"
+#line 2549 "y.tab.c"
     break;
 
   case 167:
-#line 257 "java2cpp.y"
+#line 261 "java2cpp.y"
                                               { printf("++"); }
-#line 2551 "y.tab.c"
+#line 2555 "y.tab.c"
     break;
 
   case 168:
-#line 258 "java2cpp.y"
+#line 262 "java2cpp.y"
                                                 { printf("--"); }
-#line 2557 "y.tab.c"
+#line 2561 "y.tab.c"
     break;
 
   case 170:
-#line 260 "java2cpp.y"
+#line 264 "java2cpp.y"
                               { printf("%s", yylval.var_name); verify_scope(yylval.var_name); add_exp_vect_var(48+lookup_in_table_alt(yylval.var_name)); }
-#line 2563 "y.tab.c"
+#line 2567 "y.tab.c"
     break;
 
   case 171:
-#line 263 "java2cpp.y"
+#line 267 "java2cpp.y"
                                                   {bracket_counter=0;}
-#line 2569 "y.tab.c"
+#line 2573 "y.tab.c"
     break;
 
   case 172:
-#line 264 "java2cpp.y"
+#line 268 "java2cpp.y"
                                           { for(;bracket_counter>0;bracket_counter--)printf("[]"); }
-#line 2575 "y.tab.c"
+#line 2579 "y.tab.c"
     break;
 
   case 173:
-#line 264 "java2cpp.y"
+#line 268 "java2cpp.y"
                                                                                                         { printf(" = {"); }
-#line 2581 "y.tab.c"
+#line 2585 "y.tab.c"
     break;
 
   case 174:
-#line 264 "java2cpp.y"
+#line 268 "java2cpp.y"
                                                                                                                                                           { printf("}"); }
-#line 2587 "y.tab.c"
+#line 2591 "y.tab.c"
     break;
 
   case 175:
-#line 267 "java2cpp.y"
+#line 271 "java2cpp.y"
                                                 { printf(","); }
-#line 2593 "y.tab.c"
+#line 2597 "y.tab.c"
     break;
 
   case 177:
-#line 268 "java2cpp.y"
+#line 272 "java2cpp.y"
                                                                { printf(","); }
-#line 2599 "y.tab.c"
+#line 2603 "y.tab.c"
     break;
 
   case 178:
-#line 268 "java2cpp.y"
+#line 272 "java2cpp.y"
                                                                                    { printf("{"); }
-#line 2605 "y.tab.c"
+#line 2609 "y.tab.c"
     break;
 
   case 179:
-#line 268 "java2cpp.y"
+#line 272 "java2cpp.y"
                                                                                                                                   { printf("}"); }
-#line 2611 "y.tab.c"
+#line 2615 "y.tab.c"
     break;
 
   case 181:
-#line 269 "java2cpp.y"
+#line 273 "java2cpp.y"
                                                               { printf("{"); }
-#line 2617 "y.tab.c"
+#line 2621 "y.tab.c"
     break;
 
   case 182:
-#line 269 "java2cpp.y"
+#line 273 "java2cpp.y"
                                                                                                              { printf("}"); }
-#line 2623 "y.tab.c"
+#line 2627 "y.tab.c"
     break;
 
   case 192:
-#line 282 "java2cpp.y"
+#line 286 "java2cpp.y"
               { (yyval.data_type)=(yyvsp[0].data_type); current_data_type=(yyvsp[0].data_type);	printf("int "); }
-#line 2629 "y.tab.c"
+#line 2633 "y.tab.c"
     break;
 
   case 193:
-#line 283 "java2cpp.y"
+#line 287 "java2cpp.y"
                         { (yyval.data_type)=(yyvsp[0].data_type); current_data_type=(yyvsp[0].data_type); printf("char "); }
-#line 2635 "y.tab.c"
+#line 2639 "y.tab.c"
     break;
 
   case 194:
-#line 284 "java2cpp.y"
+#line 288 "java2cpp.y"
                         { (yyval.data_type)=(yyvsp[0].data_type); current_data_type=(yyvsp[0].data_type); printf("float "); }
-#line 2641 "y.tab.c"
+#line 2645 "y.tab.c"
     break;
 
   case 195:
-#line 285 "java2cpp.y"
+#line 289 "java2cpp.y"
                          { (yyval.data_type)=(yyvsp[0].data_type); current_data_type=(yyvsp[0].data_type); printf("double "); }
-#line 2647 "y.tab.c"
+#line 2651 "y.tab.c"
     break;
 
   case 196:
-#line 286 "java2cpp.y"
+#line 290 "java2cpp.y"
                          { (yyval.data_type)=(yyvsp[0].data_type); current_data_type=(yyvsp[0].data_type); printf("std::string "); }
-#line 2653 "y.tab.c"
+#line 2657 "y.tab.c"
     break;
 
   case 197:
-#line 287 "java2cpp.y"
+#line 291 "java2cpp.y"
                           { (yyval.data_type)=(yyvsp[0].data_type); current_data_type=(yyvsp[0].data_type); printf("bool "); }
-#line 2659 "y.tab.c"
+#line 2663 "y.tab.c"
     break;
 
   case 198:
-#line 288 "java2cpp.y"
+#line 292 "java2cpp.y"
                        { printf("void "); }
-#line 2665 "y.tab.c"
+#line 2669 "y.tab.c"
     break;
 
   case 199:
-#line 291 "java2cpp.y"
+#line 295 "java2cpp.y"
                          { printf("%s", yylval.var_name); add_exp_vect(48+T_INT); }
-#line 2671 "y.tab.c"
+#line 2675 "y.tab.c"
     break;
 
   case 200:
-#line 292 "java2cpp.y"
+#line 296 "java2cpp.y"
                                       { printf("%s", yylval.var_name); add_exp_vect(48+T_CHAR); }
-#line 2677 "y.tab.c"
+#line 2681 "y.tab.c"
     break;
 
   case 201:
-#line 293 "java2cpp.y"
+#line 297 "java2cpp.y"
                                         { printf("%s", yylval.var_name); add_exp_vect(48+T_STRING); }
-#line 2683 "y.tab.c"
+#line 2687 "y.tab.c"
     break;
 
   case 202:
-#line 294 "java2cpp.y"
+#line 298 "java2cpp.y"
                                    { printf("%s", yylval.var_name); add_exp_vect(48+T_BOOL); }
-#line 2689 "y.tab.c"
+#line 2693 "y.tab.c"
     break;
 
   case 203:
-#line 296 "java2cpp.y"
+#line 300 "java2cpp.y"
                                  { printf("%s", yylval.var_name); current_data_type=T_INT;}
-#line 2695 "y.tab.c"
+#line 2699 "y.tab.c"
     break;
 
   case 204:
-#line 297 "java2cpp.y"
+#line 301 "java2cpp.y"
                                       { printf("%s", yylval.var_name); current_data_type=T_CHAR; }
-#line 2701 "y.tab.c"
+#line 2705 "y.tab.c"
     break;
 
   case 205:
-#line 298 "java2cpp.y"
+#line 302 "java2cpp.y"
                                         { printf("%s", yylval.var_name); current_data_type=T_STRING; }
-#line 2707 "y.tab.c"
+#line 2711 "y.tab.c"
     break;
 
   case 206:
-#line 299 "java2cpp.y"
+#line 303 "java2cpp.y"
                                    { printf("%s", yylval.var_name); current_data_type=T_BOOL; }
-#line 2713 "y.tab.c"
+#line 2717 "y.tab.c"
     break;
 
   case 207:
-#line 302 "java2cpp.y"
+#line 306 "java2cpp.y"
                                 { printf("%s\n", yylval.var_name); }
-#line 2719 "y.tab.c"
+#line 2723 "y.tab.c"
     break;
 
   case 208:
-#line 303 "java2cpp.y"
+#line 307 "java2cpp.y"
                                         { printf("%s", yylval.var_name); }
-#line 2725 "y.tab.c"
+#line 2729 "y.tab.c"
     break;
 
   case 211:
-#line 310 "java2cpp.y"
+#line 314 "java2cpp.y"
                             { }
-#line 2731 "y.tab.c"
+#line 2735 "y.tab.c"
     break;
 
   case 212:
-#line 311 "java2cpp.y"
+#line 315 "java2cpp.y"
                              { printf("}\n"); }
-#line 2737 "y.tab.c"
+#line 2741 "y.tab.c"
     break;
 
   case 213:
-#line 314 "java2cpp.y"
+#line 318 "java2cpp.y"
                             { printf(";"); }
-#line 2743 "y.tab.c"
+#line 2747 "y.tab.c"
     break;
 
   case 214:
-#line 315 "java2cpp.y"
+#line 319 "java2cpp.y"
                                             { yyerror("Syntax error: expected ';' at end of declaration"); }
-#line 2749 "y.tab.c"
+#line 2753 "y.tab.c"
     break;
 
   case 215:
-#line 318 "java2cpp.y"
+#line 322 "java2cpp.y"
                                     { printf(";"); }
-#line 2755 "y.tab.c"
+#line 2759 "y.tab.c"
     break;
 
   case 216:
-#line 319 "java2cpp.y"
+#line 323 "java2cpp.y"
                                                { printf(","); strcat(syntax_errors,"Syntax error: expected ';' instead of ','\t"); }
-#line 2761 "y.tab.c"
+#line 2765 "y.tab.c"
     break;
 
   case 218:
-#line 323 "java2cpp.y"
+#line 327 "java2cpp.y"
                                                  { printf("%s", yylval.var_name); printf("="); }
-#line 2767 "y.tab.c"
+#line 2771 "y.tab.c"
     break;
 
   case 219:
-#line 323 "java2cpp.y"
+#line 327 "java2cpp.y"
                                                                                                            { }
-#line 2773 "y.tab.c"
+#line 2777 "y.tab.c"
     break;
 
   case 220:
-#line 324 "java2cpp.y"
+#line 328 "java2cpp.y"
                                                        { printf("="); }
-#line 2779 "y.tab.c"
+#line 2783 "y.tab.c"
     break;
 
   case 221:
-#line 324 "java2cpp.y"
+#line 328 "java2cpp.y"
                                                                                   { strcat(syntax_errors,"Syntax error: expected '==' operator\n"); }
-#line 2785 "y.tab.c"
+#line 2789 "y.tab.c"
     break;
 
   case 222:
-#line 325 "java2cpp.y"
+#line 329 "java2cpp.y"
                                             { strcat(syntax_errors,"Syntax error: expected expresion\n"); }
-#line 2791 "y.tab.c"
+#line 2795 "y.tab.c"
     break;
 
 
-#line 2795 "y.tab.c"
+#line 2799 "y.tab.c"
 
       default: break;
     }
@@ -3023,7 +3027,7 @@ yyreturn:
 #endif
   return yyresult;
 }
-#line 328 "java2cpp.y"
+#line 332 "java2cpp.y"
 
 
 #include "lex.yy.c"
@@ -3425,10 +3429,86 @@ void verify_fun_table(){
 				}
 			}	
 			if(!check){
-			printf("\n Function %s has not been declared \n",fun[i].var_name);
+			char type[20]={0},arguments[200]={0};
+			convert_type_to_string(type,fun[i].type);
+			get_format_string_types(arguments,fun[i]);
+			printf("\n Function %s %s(%s) has not been declared \n",type,fun[i].var_name,arguments);
 			break;
 		}
 		}		
 	}
+	//If the loop end, everything ok
+	write_fun_table_header_file();
 
+}
+void write_fun_table_header_file(){
+	FILE *fp;
+
+   fp = fopen("fun.h", "w+");
+   char fun_decl[300];
+	for(int i=0;i<table_idf;i++){
+		if(fun[i].is_def){
+			char type[20]={0},arguments[200]={0};
+			convert_type_to_string(type,fun[i].type);
+			get_format_string_types(arguments,fun[i]);
+			sprintf(fun_decl," %s %s(%s)\n",type,fun[i].var_name,arguments);
+			fputs(fun_decl,fp);
+		}
+	}
+	fclose(fp);
+}
+void get_format_string_types(char dest[200],struct fun_table source){
+	int c=0;
+	for(int z=0;z<source.counter_type_params;z++){
+		switch(source.type_params[z]){
+			case T_INT:
+				strcat(dest,"int,");
+				c+=4;
+				break;
+			case T_CHAR:
+				strcat(dest,"char,");
+				c+=5;
+				break;
+			case T_FLOAT:
+				strcat(dest,"float,");
+				c+=6;
+				break;
+			case T_DOUBLE:
+				strcat(dest,"double,");
+				c+=7;
+				break;
+			case T_STRING:
+				strcat(dest,"string,");
+				c+=7;
+				break;
+			case T_BOOL:
+				strcat(dest,"bool,");
+				c+=5;
+				break;
+		}
+	}
+		dest[c-1]='\0'; //Remove the last coma
+
+}
+void convert_type_to_string(char dest[20],int type){
+			switch(type){
+			case T_INT:
+				strcat(dest,"int");
+				break;
+			case T_CHAR:
+				strcat(dest,"char");
+				break;
+			case T_FLOAT:
+				strcat(dest,"float");
+				break;
+			case T_DOUBLE:
+				strcat(dest,"double");
+				break;
+			case T_STRING:
+				strcat(dest,"string");
+				break;
+			case T_BOOL:
+				strcat(dest,"bool");
+				break;
+			}
 }

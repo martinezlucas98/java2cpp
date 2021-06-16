@@ -47,6 +47,10 @@
 	extern void add_exp_vect_var(char type);
     extern int lookup_in_table_alt(char var[MAX_NAME_LEN]);
 	extern void verify_fun_table();
+	extern void get_format_string_types(char dest[200],struct fun_table source);
+	extern void write_fun_table_header_file();
+	extern void convert_type_to_string(char dest[20],int type);
+	extern void get_format_string_types(char dest[200],struct fun_table source);
 	char var_list[MAX_VARIABLES][MAX_NAME_LEN];	// MAX_VARIABLES variable names with each variable being atmost MAX_NAME_LEN characters long
 	int string_or_var[MAX_VARIABLES];
 	//extern int *yytext;
@@ -726,10 +730,86 @@ void verify_fun_table(){
 				}
 			}	
 			if(!check){
-			printf("\n Function %s has not been declared \n",fun[i].var_name);
+			char type[20]={0},arguments[200]={0};
+			convert_type_to_string(type,fun[i].type);
+			get_format_string_types(arguments,fun[i]);
+			printf("\n Function %s %s(%s) has not been declared \n",type,fun[i].var_name,arguments);
 			break;
 		}
 		}		
 	}
+	//If the loop end, everything ok
+	write_fun_table_header_file();
 
+}
+void write_fun_table_header_file(){
+	FILE *fp;
+
+   fp = fopen("fun.h", "w+");
+   char fun_decl[300];
+	for(int i=0;i<table_idf;i++){
+		if(fun[i].is_def){
+			char type[20]={0},arguments[200]={0};
+			convert_type_to_string(type,fun[i].type);
+			get_format_string_types(arguments,fun[i]);
+			sprintf(fun_decl," %s %s(%s)\n",type,fun[i].var_name,arguments);
+			fputs(fun_decl,fp);
+		}
+	}
+	fclose(fp);
+}
+void get_format_string_types(char dest[200],struct fun_table source){
+	int c=0;
+	for(int z=0;z<source.counter_type_params;z++){
+		switch(source.type_params[z]){
+			case T_INT:
+				strcat(dest,"int,");
+				c+=4;
+				break;
+			case T_CHAR:
+				strcat(dest,"char,");
+				c+=5;
+				break;
+			case T_FLOAT:
+				strcat(dest,"float,");
+				c+=6;
+				break;
+			case T_DOUBLE:
+				strcat(dest,"double,");
+				c+=7;
+				break;
+			case T_STRING:
+				strcat(dest,"string,");
+				c+=7;
+				break;
+			case T_BOOL:
+				strcat(dest,"bool,");
+				c+=5;
+				break;
+		}
+	}
+		dest[c-1]='\0'; //Remove the last coma
+
+}
+void convert_type_to_string(char dest[20],int type){
+			switch(type){
+			case T_INT:
+				strcat(dest,"int");
+				break;
+			case T_CHAR:
+				strcat(dest,"char");
+				break;
+			case T_FLOAT:
+				strcat(dest,"float");
+				break;
+			case T_DOUBLE:
+				strcat(dest,"double");
+				break;
+			case T_STRING:
+				strcat(dest,"string");
+				break;
+			case T_BOOL:
+				strcat(dest,"bool");
+				break;
+			}
 }
