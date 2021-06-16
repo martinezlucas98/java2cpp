@@ -36,6 +36,7 @@
 "public"              {return PUBLIC;}
 "private"             {return PRIVATE;}
 "void"                {return VOID;}
+"final"					{return FINAL;}
 "System.out.println"   {return PRINTLN;}
 "System.out.print"	    {return PRINT;}
 "Scanner"                {return SCANNER;}

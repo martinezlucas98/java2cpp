@@ -26,10 +26,12 @@
 	char stack_scope[MAX_SCOPE][MAX_VARIABLES];
 	int stack_scope_counter=-1;
 	int table_idf=0;
-	struct symbol_table{char var_name[MAX_NAME_LEN]; int type;char scope_name[MAX_NAME_LEN];} sym[MAX_VARIABLES];
+	int current_constant=0;
+	struct symbol_table{char var_name[MAX_NAME_LEN]; int type;char scope_name[MAX_NAME_LEN];int is_constant;} sym[MAX_VARIABLES];
 	struct fun_table{char var_name[MAX_NAME_LEN]; int type; int type_params[MAX_VARIABLES];int counter_type_params;int is_def;} fun[MAX_DECL_FUN];
 	extern int lookup_in_table(char var[MAX_NAME_LEN]);
 	int verify_scope(char var[MAX_NAME_LEN]); // When a variable is used look first if it was declared before
+	extern int check_constant(char var[MAX_NAME_LEN]); //Check if varaible tha is assigned is not constant
 	extern void insert_to_table(char var[MAX_NAME_LEN], int type);
 	extern void insert_funtion(char var[MAX_NAME_LEN], int type,int def);
 	extern void insert_type_param(int type); // Insert the type of the current parameter or argument(literal) of the current function in the table
@@ -92,7 +94,7 @@ char var_name[MAX_NAME_LEN];
 
 %token VAR
 %token LAND LOR GEQ LEQ NOT GT LT NEQ DEQ PLUS MINUS MUL DIV MOD ASSIGNMENT EX
-%token MAIN_METHOD MAIN_CLASS IF ELSE ELSEIF WHILE FOR CLASS STATIC PUBLIC PRIVATE VOID PRINTLN PRINT NEW DO BREAK RETURN SCANNER SYS_IN
+%token MAIN_METHOD MAIN_CLASS IF ELSE ELSEIF WHILE FOR CLASS STATIC PUBLIC PRIVATE VOID PRINTLN PRINT NEW DO BREAK RETURN SCANNER SYS_IN FINAL
 %token BOOL_VAL NUMBER QUOTED_STRING QUOTED_CHAR
 %token LP RP LC RC LB RB COMA SEMICOLON COLON QM SQ DQ
 %token ILCOMMENT MLCOMMENT
@@ -127,17 +129,18 @@ STATEMENTS	: { print_tabs(); } DECLARATION STATEMENTS { }
 			| { print_tabs(); } STDIO STATEMENTS { }
 			| { print_tabs(); } BREAK_ST STATEMENTS { }
 			| { print_tabs(); } RETURN_ST STATEMENTS { }
-      		| VAR_ASSIGNATION STATEMENTS { }
+      		| VAR_USE STATEMENTS { }
 			| error DELIMITER STATEMENTS
 			| /* */	{ }
 			;
 
-IGNORE_SCOPE	: SCOPE IS_STATIC TYPE 
+IGNORE_SCOPE	: SCOPE IS_STATIC CONST TYPE 
 				;
-DECLARATION 	:IGNORE_SCOPE METHODS
-				|IGNORE_SCOPE VAR_DECLARATION 
+DECLARATION 	:IGNORE_SCOPE CONST METHODS
+				|IGNORE_SCOPE CONST VAR_DECLARATION 
 				;
-
+CONST			: FINAL{printf("const ");current_constant=1;}
+				| /* empty */
 METHODS	:   VAR {push_scope(yylval.var_name);printf("%s", yylval.var_name);insert_funtion(yylval.var_name,current_data_type,1); }LP { printf("("); } PARAMS RP { printf(")"); } LC	{ tab_counter++; printf("{\n"); } STATEMENTS RC { printf("}\n"); tab_counter--;pop_scope(); }	{ }//printf("static %s %s ( %s ) {", current_data_type, ); }
 		;
 IS_STATIC : STATIC
@@ -168,7 +171,7 @@ VAR_DECLARATION	:   VAR {insert_to_table(yylval.var_name,current_data_type); pri
 				        |   BRACKET_ARRAY VAR {insert_to_table(yylval.var_name,current_data_type);printf("%s", yylval.var_name); } HAS_ASSIGNMENT MUST_SEMICOLON { printf("\n"); check_syntax_errors(); } // shift/reduce
 				        ;
 
-VAR_ASSIGNATION	:  VAR { print_tabs(); printf("%s", yylval.var_name);verify_scope(yylval.var_name); clear_exp_vect('\0'); left_val_type = lookup_in_table(yylval.var_name);} ASSIGNMENT { printf(" = "); } MUST_EXPRESSION {type_verification();} MUST_SEMICOLON { printf("\n"); check_syntax_errors(); print_type_error_warning(); } //MUST_EXPRESSION
+VAR_USE	:  VAR { print_tabs(); printf("%s", yylval.var_name);verify_scope(yylval.var_name);check_constant(yylval.var_name); clear_exp_vect('\0'); left_val_type = lookup_in_table(yylval.var_name);} ASSIGNMENT { printf(" = "); } MUST_EXPRESSION {type_verification();} MUST_SEMICOLON { printf("\n"); check_syntax_errors(); print_type_error_warning(); } //MUST_EXPRESSION
 					| VAR{ print_tabs(); printf("%s", yylval.var_name);insert_funtion(yylval.var_name,current_data_type,0);} LP { printf("("); } PARAMS_TYPE RP { printf(")"); } MUST_SEMICOLON { printf("\n"); check_syntax_errors(); print_type_error_warning(); }
 				        ;
 
@@ -339,6 +342,25 @@ void print_table_symbols(){
 			printf("%d var=%s Scope=%s type=%d\n",i,sym[i].var_name,sym[i].scope_name,sym[i].type);			
 		}
 }
+int check_constant(char var[MAX_NAME_LEN]){
+	int is_correct=0;
+	for(int j=stack_scope_counter;j>=0;j--)
+	for(int i=0; i<table_idx; i++)
+	{	
+		if(strcmp(sym[i].var_name, var)==0 &&
+		 strcmp(sym[i].scope_name, stack_scope[j])==0 ){
+			if(sym[i].is_constant)
+				break;
+			is_correct=1;
+			break;
+			}
+	}
+	if(!is_correct){
+		printf("\nVariable %s was declared as a const \n",var);
+		yyerror("");
+	}
+
+}
 int verify_scope(char var[MAX_NAME_LEN]){
 	int found= 0;
 	int index=-1;
@@ -351,7 +373,8 @@ int verify_scope(char var[MAX_NAME_LEN]){
 		 strcmp(sym[i].scope_name, stack_scope[j])==0 ){
 			found=1;
 			index=i;
-			break;}
+			break;
+			}
 	}
 
 	if(!found){
@@ -375,7 +398,6 @@ int lookup_in_table(char var[MAX_NAME_LEN])
 }
 
 
-
 void insert_to_table(char var[MAX_NAME_LEN], int type)
 {	
 	if(lookup_in_table(var)==-1)
@@ -383,6 +405,8 @@ void insert_to_table(char var[MAX_NAME_LEN], int type)
 		strcpy(sym[table_idx].var_name,var);
 		strcpy(sym[table_idx].scope_name, stack_scope[stack_scope_counter]);
 		sym[table_idx].type = type;
+		sym[table_idx].is_constant=current_constant;
+		current_constant=0;
 		table_idx++;
 	}
 	else {
