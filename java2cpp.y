@@ -46,6 +46,7 @@
 	extern void type_verification();
 	extern void add_exp_vect_var(char type);
     extern int lookup_in_table_alt(char var[MAX_NAME_LEN]);
+	extern void verify_fun_table();
 	char var_list[MAX_VARIABLES][MAX_NAME_LEN];	// MAX_VARIABLES variable names with each variable being atmost MAX_NAME_LEN characters long
 	int string_or_var[MAX_VARIABLES];
 	//extern int *yytext;
@@ -108,7 +109,7 @@ char var_name[MAX_NAME_LEN];
 
 %%
 
-program		: { print_init(); } HAS_COMMENT MAIN_CLASS LC {push_scope("global");printf("/* start Main Class */\n"); }  STATEMENTS  RC HAS_COMMENT {pop_scope(); printf("\n/* end Main Class */\n"); exit(0); }
+program		: { print_init(); } HAS_COMMENT MAIN_CLASS LC {push_scope("global");printf("/* start Main Class */\n"); }  STATEMENTS  RC HAS_COMMENT {pop_scope(); printf("\n/* end Main Class */\n"); verify_fun_table();exit(0); }
 			| /* Empty file */	{ printf("\n"); exit(2); }
 			;
 
@@ -704,4 +705,31 @@ int lookup_in_table_alt(char var[MAX_NAME_LEN])
 	}
 
 	return -1;
+}
+void verify_fun_table(){
+	struct fun_table temp;
+	for(int i=0;i<table_idf;i++){
+		if(!fun[i].is_def){
+			temp=fun[i];
+			int check=0;
+			for(int j=0;j<table_idf;j++){
+				if(fun[j].is_def){
+					if(strcmp(fun[j].var_name,temp.var_name) == 0 && fun[j].counter_type_params == temp.counter_type_params){
+						int check_type=1;
+						for(int z=0;z<temp.counter_type_params;z++){
+							if(fun[j].type_params[z] != temp.type_params[z])
+								check_type=0;
+						}
+						check =check_type?1:0;
+						
+					}
+				}
+			}	
+			if(!check){
+			printf("\n Function %s has not been declared \n",fun[i].var_name);
+			break;
+		}
+		}		
+	}
+
 }

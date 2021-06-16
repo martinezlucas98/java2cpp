@@ -9,7 +9,12 @@ public class Main {
   private static void bar(int [][] num1, char num2) {
         int x;
         x=2;
-
-        funbar(x);
+        funbar(x,'a');
+        funTest("test");
     }
+
+  public static void funTest(String test){
+
+  } 
+
 }
