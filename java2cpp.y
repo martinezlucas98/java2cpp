@@ -136,7 +136,7 @@ char var_name[MAX_NAME_LEN];
 
 %%
 
-program		: { fp_aux = fopen(AUXFILE,"w"); print_init();} HAS_COMMENT MAIN_CLASS LC {push_scope("global"); write_to_file("\n/* start Main Class */\n\n"); }  STATEMENTS  RC HAS_COMMENT {pop_scope(); write_to_file("\n/* end Main Class */\n"); verify_fun_table(); fclose(fp_aux); int r = merge_files(); console_msg(); exit(r); }
+program		: { fp_aux = fopen(AUXFILE,"w"); print_init();} HAS_COMMENT MAIN_CLASS LC {push_scope("global"); write_to_file("\n/* start Main Class */\n\n"); }  STATEMENTS  RC {pop_scope(); write_to_file("\n/* end Main Class */\n"); verify_fun_table(); fclose(fp_aux); merge_files();}{fp_aux = fopen(CFILE,"a");}HAS_COMMENT{fclose(fp_aux); console_msg(); exit(0); }
 			| /* Empty file */	{ write_to_file("\n"); exit(2); }
 			;
 
@@ -350,7 +350,7 @@ SEMICOLON_NOT_COMA	: SEMICOLON { write_to_file(";"); }
 MUST_EXPRESSION : EXPRESION
 				| VAR ASSIGNMENT { write_to_file(yylval.var_name); write_to_file("="); } EXPRESION { }
 				| EXPRESION ASSIGNMENT { write_to_file("="); } EXPRESION { strcat(syntax_errors,"Syntax error: expected '==' operator\n"); }
-				| /*empty*/ { strcat(syntax_errors,"Syntax error: expected expresion\n"); }
+				| /*empty*/ { strcat(syntax_errors,"Syntax error: expected expression\n"); }
 				;
 
 %%
