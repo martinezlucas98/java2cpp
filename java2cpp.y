@@ -174,19 +174,19 @@ RETURN_ST 	: RETURN { write_to_file("return "); } EXPRESION MUST_SEMICOLON { wri
 BREAK_ST	: BREAK { write_to_file("break"); } MUST_SEMICOLON { write_to_file("\n"); }
 			;
 
-STDIO	: PRINTLN { write_to_file("std::cout"); } LP { write_to_file(" << "); } EXPRESION RP { write_to_file(" <<  std::endl"); } MUST_SEMICOLON { write_to_file("\n"); }
-		| PRINT { write_to_file("std::cout"); } LP { write_to_file(" << "); } EXPRESION RP MUST_SEMICOLON { write_to_file("\n"); }
-		| SCANNER_OBJECT
-		| MY_INPUT
+STDIO	: PRINTLN { write_to_file("std::cout"); } LP { write_to_file(" << "); } EXPRESSION_OUT RP { write_to_file(" <<  std::endl"); } MUST_SEMICOLON { write_to_file("\n"); }
+		| PRINT { write_to_file("std::cout"); } LP { write_to_file(" << "); } EXPRESSION_OUT RP MUST_SEMICOLON { write_to_file("\n"); }
+		| SCANNER { write_to_file("std::string "); } VAR { write_to_file(yylval.var_name);} ASSIGNMENT {write_to_file(";\n");} NEW SCANNER {print_tabs();write_to_file("std::cin");} LP SYS_IN RP {write_to_file(" >> ");} SEMICOLON { write_to_file(yylval.var_name); write_to_file(";\n");} 
+		//| VAR ASSIGNMENT NEW SCANNER {write_to_file("std::cin");} LP SYS_IN RP {write_to_file(" >> ");} { write_to_file(yylval.var_name); }
 		;
+
+EXPRESSION_OUT	: TERMINAL 
+				| TERMINAL PLUS {write_to_file(" << ");} EXPRESSION_OUT
+				| VAR
+				| VAR PLUS {write_to_file(" << ");}
+				;
 		
-    // Check MUST_SEMICOLON on inputs
-SCANNER_OBJECT : SCANNER { write_to_file("std::string "); } VAR { write_to_file(yylval.var_name);} ASSIGNMENT NEW SCANNER {write_to_file("std::cin");} LP SYS_IN RP {write_to_file(">>");} SEMICOLON { write_to_file(yylval.var_name); } 
-               ;
-
-
-MY_INPUT  : VAR ASSIGNMENT NEW SCANNER {write_to_file("std::cin");} LP SYS_IN RP {write_to_file(">>");} SEMICOLON { write_to_file(yylval.var_name); } 
-          ;
+    // Check MUST_SEMICOLON on inputs ::: SCANNER
 
 VAR_DECLARATION	:   VAR {insert_to_table(yylval.var_name,current_data_type); write_to_file(yylval.var_name); {clear_exp_vect('\0');}} HAS_ASSIGNMENT MUST_SEMICOLON { write_to_file("\n"); check_syntax_errors(); print_type_error_warning();}
 				        |   BRACKET_ARRAY VAR {insert_to_table(yylval.var_name,current_data_type);write_to_file(yylval.var_name); } HAS_ASSIGNMENT MUST_SEMICOLON { write_to_file("\n"); check_syntax_errors(); } // shift/reduce
