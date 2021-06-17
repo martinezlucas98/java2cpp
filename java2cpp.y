@@ -917,9 +917,9 @@ int merge_files(){
 
 void print_error_counter(){
 	if(error_counter>0){
-		printf("\nErrors found: %d\nTRANSLATION FAILED !!!\n",error_counter);
+		printf("\nErrors found: %d\n\nTRANSLATION FAILED !!!\n",error_counter);
 	}else{
-		printf("\nErrors found: %d\nTRANSLATION SUCCESSFUL !!!\n",error_counter);
+		printf("\nErrors found: %d\n\nTRANSLATION SUCCESSFUL !!!\n",error_counter);
 	}
 }
 
@@ -971,6 +971,7 @@ int console_msg(){
 
     fclose(fp);
 
+	printf("\nTranslation file name: %s\n",CFILE);
 	print_error_counter();
 
     return 0;
