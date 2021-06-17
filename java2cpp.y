@@ -322,8 +322,8 @@ LITERAL_ARGUMENT	: NUMBER { fputs(yylval.var_name,fp_aux); current_data_type=T_I
 			| BOOL_VAL { fputs(yylval.var_name,fp_aux); current_data_type=T_BOOL; }
 			;
 
-COMMENT	: ILCOMMENT		{ fputs(yylval.var_name,fp_aux); fputs("\n",fp_aux);}
-		| MLCOMMENT		{ fputs(yylval.var_name,fp_aux); } // we need to add comments bewteen { } on methods with POSSIBLE_COMMENT maybe
+COMMENT	: ILCOMMENT		{ fputs(yylval.var_name,fp_aux); fputs("\n",fp_aux); }
+		| MLCOMMENT		{ fputs(yylval.var_name,fp_aux); fputs("\n",fp_aux); } // we need to add comments bewteen { } on methods with POSSIBLE_COMMENT maybe
 		;
 
 HAS_COMMENT	: COMMENT
@@ -470,6 +470,10 @@ void print_tabs() {
 }
 
 int main() {
+	// clear files
+	fclose(fopen(CFILE,"w"));
+	fclose(fopen("fun.h","w"));
+	fclose(fopen(AUXFILE,"w"));
 	#if YYDEBUG
         yydebug = 1;
     #endif
