@@ -3067,7 +3067,7 @@ int check_constant(char var[MAX_NAME_LEN]){
 			}
 	}
 	if(!is_correct){
-		printf("\nVariable %s was declared ias a const \n",var);
+		printf("\nVariable %s was declared as a const \n",var);
 		yyerror("");
 	}
 
@@ -3117,8 +3117,6 @@ void insert_to_table(char var[MAX_NAME_LEN], int type)
 		strcpy(sym[table_idx].scope_name, stack_scope[stack_scope_counter]);
 		sym[table_idx].type = type;
 		sym[table_idx].is_constant=current_constant;
-	printf("\n asd %d \n",current_constant);
-
 		current_constant=0;
 		table_idx++;
 	}
