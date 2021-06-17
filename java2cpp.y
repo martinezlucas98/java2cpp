@@ -11,6 +11,8 @@
 	#define MAX_SCOPE 32
 	#define DIMENSION 20
 	#define INTNOVAL -2
+	#define AUXFILE "auxjava2cpp.txt"
+	#define CFILE "java2cpp_translation.cc"
 	int yylex(void);
 	int yyerror(const char *s);
 	int success = 1;
@@ -27,6 +29,7 @@
 	int stack_scope_counter=-1;
 	int table_idf=0;
 	int current_constant=0;
+	int error_counter=0;
 	struct symbol_table{char var_name[MAX_NAME_LEN]; int type;char scope_name[MAX_NAME_LEN];int is_constant;} sym[MAX_VARIABLES];
 	struct fun_table{char var_name[MAX_NAME_LEN]; int type; int type_params[MAX_VARIABLES];int counter_type_params;int is_def;} fun[MAX_DECL_FUN];
 	extern int lookup_in_table(char var[MAX_NAME_LEN]);
@@ -53,6 +56,9 @@
 	extern void write_fun_table_header_file();
 	extern void convert_type_to_string(char dest[20],int type);
 	extern void get_format_string_types(char dest[200],struct fun_table source);
+	extern int merge_files();
+	extern int console_msg();
+
 	char var_list[MAX_VARIABLES][MAX_NAME_LEN];	// MAX_VARIABLES variable names with each variable being atmost MAX_NAME_LEN characters long
 	int string_or_var[MAX_VARIABLES];
 	//extern int *yytext;
@@ -68,21 +74,31 @@
 	int evtop = 0;
 	int type_verified = 0;
 
+	FILE *fp_aux;
+
 
 	// functions
-	void print_init(){
+	void append_init(FILE *fp){
 		time_t t = time(NULL);
   		struct tm now = *localtime(&t);
+		char version_msg[32];
+		char github_msg[64];
+		char date_msg[128];
+
 		char *version = "alpha 1.0";
 		char *github = "https://github.com/martinezlucas98/java2cpp";
 
-		printf("/*\n*\t===================================================================\n");
-		printf("*\tTranslated from java to c++ using java2cpp\n");
-		printf("*\tVersion: %s\n", version);
-		printf("*\tGithub: %s\n", github);
-		printf("*\tTranslated on: %d-%02d-%02d %02d:%02d:%02d (yyyy-MM-dd hh:mm:ss)\n", now.tm_year + 1900, now.tm_mon + 1, now.tm_mday, now.tm_hour, now.tm_min, now.tm_sec);
-		printf("*\t===================================================================\n*/\n\n");
-		printf("#include <iostream>\n#include <string>\n\nusing namespace std;\n\n");
+		sprintf(version_msg, "*\tVersion: %s\n", version);
+		sprintf(github_msg, "*\tGithub: %s\n", github);
+		sprintf(date_msg, "*\tTranslated on: %d-%02d-%02d %02d:%02d:%02d (yyyy-MM-dd hh:mm:ss)\n", now.tm_year + 1900, now.tm_mon + 1, now.tm_mday, now.tm_hour, now.tm_min, now.tm_sec);
+
+		fputs("/*\n*\t===================================================================\n",fp);
+		fputs("*\tTranslated from java to c++ using java2cpp\n",fp);
+		fputs(version_msg,fp);
+		fputs(github_msg,fp);
+		fputs(date_msg,fp);
+		fputs("*\t===================================================================\n*/\n\n",fp);
+		fputs("#include <iostream>\n#include <string>\n\nusing namespace std;\n\n",fp);
 	}
 
 %}
@@ -115,8 +131,8 @@ char var_name[MAX_NAME_LEN];
 
 %%
 
-program		: { print_init(); } HAS_COMMENT MAIN_CLASS LC {push_scope("global");printf("/* start Main Class */\n"); }  STATEMENTS  RC HAS_COMMENT {pop_scope(); printf("\n/* end Main Class */\n"); verify_fun_table();exit(0); }
-			| /* Empty file */	{ printf("\n"); exit(2); }
+program		: { fp_aux = fopen(AUXFILE,"w"); } HAS_COMMENT MAIN_CLASS LC {push_scope("global"); fputs("\n/* start Main Class */\n\n",fp_aux); }  STATEMENTS  RC HAS_COMMENT {pop_scope(); fputs("\n/* end Main Class */\n",fp_aux); verify_fun_table(); fclose(fp_aux); int r = merge_files(); console_msg(); exit(r); }
+			| /* Empty file */	{ fputs("\n",fp_aux); exit(2); }
 			;
 
 STATEMENTS	: { print_tabs(); } DECLARATION STATEMENTS { }
@@ -139,40 +155,40 @@ IGNORE_SCOPE	: SCOPE IS_STATIC CONST TYPE
 DECLARATION 	:IGNORE_SCOPE CONST METHODS
 				|IGNORE_SCOPE CONST VAR_DECLARATION 
 				;
-CONST			: FINAL{printf("const ");current_constant=1;}
+CONST			: FINAL{ fputs("const ",fp_aux); current_constant=1; }
 				| /* empty */
-METHODS	:   VAR {push_scope(yylval.var_name);printf("%s", yylval.var_name);insert_funtion(yylval.var_name,current_data_type,1); }LP { printf("("); } PARAMS RP { printf(")"); } LC	{ tab_counter++; printf("{\n"); } STATEMENTS RC { printf("}\n"); tab_counter--;pop_scope(); }	{ }//printf("static %s %s ( %s ) {", current_data_type, ); }
+METHODS	:   VAR {push_scope(yylval.var_name);fputs(yylval.var_name,fp_aux);insert_funtion(yylval.var_name,current_data_type,1); }LP { fputs("(",fp_aux); } PARAMS RP { fputs(")",fp_aux); } LC	{ tab_counter++; fputs("{\n",fp_aux); } STATEMENTS RC { fputs("}\n",fp_aux); tab_counter--;pop_scope(); }	{ }//printf("static %s %s ( %s ) {", current_data_type, ); }
 		;
 IS_STATIC : STATIC
 			| /* */
 			;
       
-RETURN_ST 	: RETURN { printf("return "); } EXPRESION MUST_SEMICOLON { printf("\n"); }
+RETURN_ST 	: RETURN { fputs("return ",fp_aux); } EXPRESION MUST_SEMICOLON { fputs("\n",fp_aux); }
 			      ;
 
-BREAK_ST	: BREAK { printf("break"); } MUST_SEMICOLON { printf("\n"); }
+BREAK_ST	: BREAK { fputs("break",fp_aux); } MUST_SEMICOLON { fputs("\n",fp_aux); }
 			;
 
-STDIO	: PRINTLN { printf("std::cout"); } LP { printf(" << "); } EXPRESION RP { printf(" <<  std::endl"); } MUST_SEMICOLON { printf("\n"); }
-		| PRINT { printf("std::cout"); } LP { printf(" << "); } EXPRESION RP MUST_SEMICOLON { printf("\n"); }
+STDIO	: PRINTLN { fputs("std::cout",fp_aux); } LP { fputs(" << ",fp_aux); } EXPRESION RP { fputs(" <<  std::endl",fp_aux); } MUST_SEMICOLON { fputs("\n",fp_aux); }
+		| PRINT { fputs("std::cout",fp_aux); } LP { fputs(" << ",fp_aux); } EXPRESION RP MUST_SEMICOLON { fputs("\n",fp_aux); }
 		| SCANNER_OBJECT
 		| MY_INPUT
 		;
 		
     // Check MUST_SEMICOLON on inputs
-SCANNER_OBJECT : SCANNER { printf("std::string "); } VAR { printf("%s;", yylval.var_name); } ASSIGNMENT NEW SCANNER {printf("std::cin");} LP SYS_IN RP {printf(">>");} SEMICOLON { printf("%s;", yylval.var_name); } 
+SCANNER_OBJECT : SCANNER { fputs("std::string ",fp_aux); } VAR { fputs(yylval.var_name,fp_aux);} ASSIGNMENT NEW SCANNER {fputs("std::cin",fp_aux);} LP SYS_IN RP {fputs(">>",fp_aux);} SEMICOLON { fputs(yylval.var_name,fp_aux); } 
                ;
 
 
-MY_INPUT  : VAR ASSIGNMENT NEW SCANNER {printf("std::cin");} LP SYS_IN RP {printf(">>");} SEMICOLON { printf("%s;", yylval.var_name); } 
+MY_INPUT  : VAR ASSIGNMENT NEW SCANNER {fputs("std::cin",fp_aux);} LP SYS_IN RP {fputs(">>",fp_aux);} SEMICOLON { fputs(yylval.var_name,fp_aux); } 
           ;
 
-VAR_DECLARATION	:   VAR {insert_to_table(yylval.var_name,current_data_type); printf("%s", yylval.var_name); {clear_exp_vect('\0');}} HAS_ASSIGNMENT MUST_SEMICOLON { printf("\n"); check_syntax_errors(); print_type_error_warning();}
-				        |   BRACKET_ARRAY VAR {insert_to_table(yylval.var_name,current_data_type);printf("%s", yylval.var_name); } HAS_ASSIGNMENT MUST_SEMICOLON { printf("\n"); check_syntax_errors(); } // shift/reduce
+VAR_DECLARATION	:   VAR {insert_to_table(yylval.var_name,current_data_type); fputs(yylval.var_name,fp_aux); {clear_exp_vect('\0');}} HAS_ASSIGNMENT MUST_SEMICOLON { fputs("\n",fp_aux); check_syntax_errors(); print_type_error_warning();}
+				        |   BRACKET_ARRAY VAR {insert_to_table(yylval.var_name,current_data_type);fputs(yylval.var_name,fp_aux); } HAS_ASSIGNMENT MUST_SEMICOLON { fputs("\n",fp_aux); check_syntax_errors(); } // shift/reduce
 				        ;
 
-VAR_USE	:  VAR { print_tabs(); printf("%s", yylval.var_name);verify_scope(yylval.var_name);check_constant(yylval.var_name); clear_exp_vect('\0'); left_val_type = lookup_in_table(yylval.var_name);} ASSIGNMENT { printf(" = "); } MUST_EXPRESSION {type_verification();} MUST_SEMICOLON { printf("\n"); check_syntax_errors(); print_type_error_warning(); } //MUST_EXPRESSION
-					| VAR{ print_tabs(); printf("%s", yylval.var_name);insert_funtion(yylval.var_name,current_data_type,0);} LP { printf("("); } PARAMS_TYPE RP { printf(")"); } MUST_SEMICOLON { printf("\n"); check_syntax_errors(); print_type_error_warning(); }
+VAR_USE	:  VAR { print_tabs(); fputs(yylval.var_name,fp_aux);verify_scope(yylval.var_name);check_constant(yylval.var_name); clear_exp_vect('\0'); left_val_type = lookup_in_table(yylval.var_name);} ASSIGNMENT { fputs(" = ",fp_aux); } MUST_EXPRESSION {type_verification();} MUST_SEMICOLON { fputs("\n",fp_aux); check_syntax_errors(); print_type_error_warning(); } //MUST_EXPRESSION
+					| VAR{ print_tabs(); fputs(yylval.var_name,fp_aux);insert_funtion(yylval.var_name,current_data_type,0);} LP { fputs("(",fp_aux); } PARAMS_TYPE RP { fputs(")",fp_aux); } MUST_SEMICOLON { fputs("\n",fp_aux); check_syntax_errors(); print_type_error_warning(); }
 				        ;
 
 BRACKET_ARRAY	: LB NUMARRAY RB  BRACKET_ARRAY
@@ -181,46 +197,46 @@ BRACKET_ARRAY	: LB NUMARRAY RB  BRACKET_ARRAY
 			;
       
 // Check errors for if elseif 
-IF_STATEMENT	: IF LP { printf("if (");create_scope_name_and_push_it(); } MUST_EXPRESSION RP LC { tab_counter++; printf(") {\n"); check_syntax_errors(); } STATEMENTS RC { pop_scope();tab_counter--; print_tabs(); printf("}"); } ELSE_VARIATIONS
+IF_STATEMENT	: IF LP { fputs("if (",fp_aux);create_scope_name_and_push_it(); } MUST_EXPRESSION RP LC { tab_counter++; fputs(") {\n",fp_aux); check_syntax_errors(); } STATEMENTS RC { pop_scope();tab_counter--; print_tabs(); fputs("}",fp_aux); } ELSE_VARIATIONS
 				      ;
 
-ELSE_VARIATIONS	: ELSE LC {create_scope_name_and_push_it(); tab_counter++; printf(" else {\n"); } STATEMENTS RC {pop_scope();tab_counter--; print_tabs(); printf("}"); }
-				| ELSEIF LP { printf(" else if ("); } MUST_EXPRESSION RP { printf(")"); check_syntax_errors(); } LC {create_scope_name_and_push_it();tab_counter++; printf(") {\n"); } STATEMENTS RC { pop_scope();tab_counter--;print_tabs(); printf("}"); } ELSE_VARIATIONS
-				| /* */ { printf("\n"); }
+ELSE_VARIATIONS	: ELSE LC {create_scope_name_and_push_it(); tab_counter++; fputs(" else {\n",fp_aux); } STATEMENTS RC {pop_scope();tab_counter--; print_tabs(); fputs("}",fp_aux); }
+				| ELSEIF LP { fputs(" else if (",fp_aux); } MUST_EXPRESSION RP { fputs(")",fp_aux); check_syntax_errors(); } LC {create_scope_name_and_push_it();tab_counter++; fputs(") {\n",fp_aux); } STATEMENTS RC { pop_scope();tab_counter--;print_tabs(); fputs("}",fp_aux); } ELSE_VARIATIONS
+				| /* */ { fputs("\n",fp_aux); }
 				;
 				
-WHILE_LOOP  : WHILE LP {create_scope_name_and_push_it();printf("while ("); } DECL_EXPR RP LC { tab_counter++; printf("){\n"); } STATEMENTS RC {pop_scope();tab_counter--; print_tabs(); printf("}\n"); }
+WHILE_LOOP  : WHILE LP {create_scope_name_and_push_it();fputs("while (",fp_aux); } DECL_EXPR RP LC { tab_counter++; fputs("){\n",fp_aux); } STATEMENTS RC {pop_scope();tab_counter--; print_tabs(); fputs("}\n",fp_aux); }
             ;
 
 
 
-FOR_LOOP	: FOR LP {create_scope_name_and_push_it(); printf("for ("); } FOR_PARAMS RP LC { tab_counter++; printf(") {\n"); check_syntax_errors(); } STATEMENTS RC {pop_scope(); tab_counter--; print_tabs(); printf("}\n"); }
+FOR_LOOP	: FOR LP {create_scope_name_and_push_it(); fputs("for (",fp_aux); } FOR_PARAMS RP LC { tab_counter++; fputs(") {\n",fp_aux); check_syntax_errors(); } STATEMENTS RC {pop_scope(); tab_counter--; print_tabs(); fputs("}\n",fp_aux); }
 			    ;
 
 FOR_PARAMS	: DECL_EXPR SEMICOLON_NOT_COMA DECL_EXPR SEMICOLON_NOT_COMA EXPRESION // SEMICOLON_NOT_COMA causes 1 reduce/reduce conflict
-			| TYPE VAR COLON { printf("%s", yylval.var_name); } { printf(" : "); } VAR { printf("%s", yylval.var_name); }// shift/reduce
+			| TYPE VAR COLON { fputs(yylval.var_name,fp_aux); } { fputs(" : ",fp_aux); } VAR { fputs(yylval.var_name,fp_aux); }// shift/reduce
 			;
 
 DECL_EXPR	: EXPRESION
-			| TYPE VAR {insert_to_table(yylval.var_name,current_data_type); printf("%s", yylval.var_name); } HAS_ASSIGNMENT
-			| VAR {verify_scope(yylval.var_name);printf("%s", yylval.var_name); } HAS_ASSIGNMENT//ASSIGNMENT { printf(" = "); } EXPRESION
+			| TYPE VAR {insert_to_table(yylval.var_name,current_data_type); fputs(yylval.var_name,fp_aux); } HAS_ASSIGNMENT
+			| VAR {verify_scope(yylval.var_name);fputs(yylval.var_name,fp_aux); } HAS_ASSIGNMENT//ASSIGNMENT { printf(" = "); } EXPRESION
 			| /* */  { }
       ;
 
-DO_WHILE_LOOP   : DO LC { printf("do{\n"); tab_counter++;} STATEMENTS RC WHILE LP {tab_counter--; print_tabs(); printf("}while("); } DECL_EXPR RP { printf(")"); } MUST_SEMICOLON { printf("\n"); } 
+DO_WHILE_LOOP   : DO LC { fputs("do{\n",fp_aux); tab_counter++;} STATEMENTS RC WHILE LP {tab_counter--; print_tabs(); fputs("}while(",fp_aux); } DECL_EXPR RP { fputs(")",fp_aux); } MUST_SEMICOLON { fputs("\n",fp_aux); } 
                 ;
 
 
-NUMARRAY	: NUMBER   { printf("[%s]", yylval.var_name); }
-			    | VAR { printf("[%s]", yylval.var_name); }
-			    ;
+NUMARRAY	: NUMBER	{ char s[MAX_NAME_LEN+3]; sprintf(s,"[%s]", yylval.var_name); fputs(s,fp_aux); }
+			| VAR		{ char s[MAX_NAME_LEN+3]; sprintf(s,"[%s]", yylval.var_name); fputs(s,fp_aux); }
+			;
 
-HAS_ASSIGNMENT	: ASSIGNMENT { printf(" = "); } MUST_EXPRESSION {type_verification();} //check this
+HAS_ASSIGNMENT	: ASSIGNMENT { fputs(" = ",fp_aux); } MUST_EXPRESSION {type_verification();} //check this
 				        | ASSIGNMENT EXPRESION_ARRAY
 				        | /* No assignment */ {}
 				        ;
 
-MAIN_METHOD_DECLARATION	: MAIN_METHOD { push_scope("main");printf("int main(int argc, char **argv)"); } LC { tab_counter++; printf("{\n"); } STATEMENTS RC { printf("\n}\n"); tab_counter--; pop_scope();}
+MAIN_METHOD_DECLARATION	: MAIN_METHOD { push_scope("main");fputs("int main(int argc, char **argv)",fp_aux); } LC { tab_counter++; fputs("{\n",fp_aux); } STATEMENTS RC { fputs("\n}\n",fp_aux); tab_counter--; pop_scope();}
 			                  ;
 
 
@@ -231,49 +247,49 @@ SCOPE	: PUBLIC
 		  ;
 
 PARAMS	: HAS_PARAMS PARAMS
-		    | COMA { printf(","); }  HAS_PARAMS
-		    | /* No parameters */		{ printf(" "); }
+		    | COMA { fputs(",",fp_aux); }  HAS_PARAMS
+		    | /* No parameters */		{ fputs(" ",fp_aux); }
 		    ;
-PARAMS_TYPE : VAR {printf("%s", yylval.var_name);insert_argument_var( yylval.var_name);} COMA { printf(","); } PARAMS_TYPE
-			| VAR{printf("%s", yylval.var_name);insert_argument_var( yylval.var_name);}
-			| LITERAL_ARGUMENT {insert_type_param(current_data_type);} COMA { printf(","); } PARAMS_TYPE
+PARAMS_TYPE : VAR {fputs(yylval.var_name,fp_aux);insert_argument_var( yylval.var_name);} COMA { fputs(",",fp_aux); } PARAMS_TYPE
+			| VAR{fputs(yylval.var_name,fp_aux);insert_argument_var( yylval.var_name);}
+			| LITERAL_ARGUMENT {insert_type_param(current_data_type);} COMA { fputs(",",fp_aux); } PARAMS_TYPE
 			| LITERAL_ARGUMENT {insert_type_param(current_data_type);} 
 			| /* empty*/
 			;
 
-HAS_PARAMS	: TYPE VAR {insert_to_table(yylval.var_name,current_data_type);printf("%s", yylval.var_name);insert_type_param(current_data_type); }
-			      | TYPE  BRACKET_ARRAY VAR {insert_to_table(yylval.var_name,current_data_type); printf("%s", yylval.var_name);printf("[]");bracket_counter-- ;for(;bracket_counter>0;bracket_counter--)printf("[%d]",DIMENSION);}
+HAS_PARAMS	: TYPE VAR {insert_to_table(yylval.var_name,current_data_type);fputs(yylval.var_name,fp_aux);insert_type_param(current_data_type); }
+			      | TYPE  BRACKET_ARRAY VAR {insert_to_table(yylval.var_name,current_data_type); fputs(yylval.var_name,fp_aux);fputs("[]",fp_aux);bracket_counter-- ;for(;bracket_counter>0;bracket_counter--){char s[255];sprintf(s,"[%d]",DIMENSION);fputs(s,fp_aux);}}
 			      | /* */
 			      ;
 
-EXPRESION	: EXPRESION LAND { printf(" && "); } EXPRESION
-			| EXPRESION LOR { printf(" || "); } EXPRESION
-			| EXPRESION LEQ { printf(" <= "); } EXPRESION
-			| EXPRESION GEQ { printf(" >= "); } EXPRESION
-			| EXPRESION GT { printf(" > "); } EXPRESION
-			| EXPRESION LT { printf(" < "); } EXPRESION
-			| EXPRESION NEQ { printf(" != "); } EXPRESION
-			| EXPRESION DEQ { printf(" == "); } EXPRESION
-			| NOT { printf("!"); } EXPRESION
-			| EXPRESION PLUS { printf(" + "); add_exp_vect('+');} EXPRESION
-			| EXPRESION MINUS { printf(" - "); add_exp_vect('-');} EXPRESION
-			| EXPRESION MUL { printf(" * "); add_exp_vect('*');} EXPRESION
-			| EXPRESION DIV { printf(" / "); add_exp_vect('/'); } EXPRESION
-			| EXPRESION MOD { printf(" %% "); } EXPRESION
-			| LP { printf("("); add_exp_vect('(');} EXPRESION RP { printf(")"); add_exp_vect(')');}
-			| EXPRESION PLUS PLUS { printf("++"); }
-			| EXPRESION MINUS MINUS { printf("--"); }
+EXPRESION	: EXPRESION LAND { fputs(" && ",fp_aux); } EXPRESION
+			| EXPRESION LOR { fputs(" || ",fp_aux); } EXPRESION
+			| EXPRESION LEQ { fputs(" <= ",fp_aux); } EXPRESION
+			| EXPRESION GEQ { fputs(" >= ",fp_aux); } EXPRESION
+			| EXPRESION GT { fputs(" > ",fp_aux); } EXPRESION
+			| EXPRESION LT { fputs(" < ",fp_aux); } EXPRESION
+			| EXPRESION NEQ { fputs(" != ",fp_aux); } EXPRESION
+			| EXPRESION DEQ { fputs(" == ",fp_aux); } EXPRESION
+			| NOT { fputs("!",fp_aux); } EXPRESION
+			| EXPRESION PLUS { fputs(" + ",fp_aux); add_exp_vect('+');} EXPRESION
+			| EXPRESION MINUS { fputs(" - ",fp_aux); add_exp_vect('-');} EXPRESION
+			| EXPRESION MUL { fputs(" * ",fp_aux); add_exp_vect('*');} EXPRESION
+			| EXPRESION DIV { fputs(" / ",fp_aux); add_exp_vect('/'); } EXPRESION
+			| EXPRESION MOD { fputs(" %% ",fp_aux); } EXPRESION
+			| LP { fputs("(",fp_aux); add_exp_vect('(');} EXPRESION RP { fputs(")",fp_aux); add_exp_vect(')');}
+			| EXPRESION PLUS PLUS { fputs("++",fp_aux); }
+			| EXPRESION MINUS MINUS { fputs("--",fp_aux); }
 			| TERMINAL
-			| VAR { printf("%s", yylval.var_name); verify_scope(yylval.var_name); add_exp_vect_var(48+lookup_in_table_alt(yylval.var_name)); }
+			| VAR { fputs(yylval.var_name,fp_aux); verify_scope(yylval.var_name); add_exp_vect_var(48+lookup_in_table_alt(yylval.var_name)); }
 			;
 
 EXPRESION_ARRAY	: NEW TYPE_NO_PRINT BRACKET_ARRAY {bracket_counter=0;}
-				        | { for(;bracket_counter>0;bracket_counter--)printf("[]"); } LC { printf(" = {"); } EXPRESION_ARRAY_INITIALIZE RC { printf("}"); }
+				        | { for(;bracket_counter>0;bracket_counter--)fputs("[]",fp_aux); } LC { fputs(" = {",fp_aux); } EXPRESION_ARRAY_INITIALIZE RC { fputs("}",fp_aux); }
 				        ;
 
-EXPRESION_ARRAY_INITIALIZE	: TERMINAL COMA { printf(","); } EXPRESION_ARRAY_INITIALIZE
-							| COMA { printf(","); } LC { printf("{"); } EXPRESION_ARRAY_INITIALIZE RC { printf("}"); } EXPRESION_ARRAY_INITIALIZE
-							|  LC { printf("{"); } EXPRESION_ARRAY_INITIALIZE RC { printf("}"); } EXPRESION_ARRAY_INITIALIZE
+EXPRESION_ARRAY_INITIALIZE	: TERMINAL COMA { fputs(",",fp_aux); } EXPRESION_ARRAY_INITIALIZE
+							| COMA { fputs(",",fp_aux); } LC { fputs("{",fp_aux); } EXPRESION_ARRAY_INITIALIZE RC { fputs("}",fp_aux); } EXPRESION_ARRAY_INITIALIZE
+							|  LC { fputs("{",fp_aux); } EXPRESION_ARRAY_INITIALIZE RC { fputs("}",fp_aux); } EXPRESION_ARRAY_INITIALIZE
 							| TERMINAL
 							| /* */
 							;
@@ -286,28 +302,28 @@ TYPE_NO_PRINT	: INT
 				| BOOLEAN
 				;
 
-TYPE	: INT { $$=$1; current_data_type=$1;	printf("int "); }
-		| CHAR  { $$=$1; current_data_type=$1; printf("char "); }
-		| FLOAT { $$=$1; current_data_type=$1; printf("float "); }
-		| DOUBLE { $$=$1; current_data_type=$1; printf("double "); }
-		| STRING { $$=$1; current_data_type=$1; printf("std::string "); }
-		| BOOLEAN { $$=$1; current_data_type=$1; printf("bool "); }
-		| VOID { printf("void "); }
+TYPE	: INT { $$=$1; current_data_type=$1;	fputs("int ",fp_aux); }
+		| CHAR  { $$=$1; current_data_type=$1; fputs("char ",fp_aux); }
+		| FLOAT { $$=$1; current_data_type=$1; fputs("float ",fp_aux); }
+		| DOUBLE { $$=$1; current_data_type=$1; fputs("double ",fp_aux); }
+		| STRING { $$=$1; current_data_type=$1; fputs("std::string ",fp_aux); }
+		| BOOLEAN { $$=$1; current_data_type=$1; fputs("bool ",fp_aux); }
+		| VOID { fputs("void ",fp_aux); }
 		;
 
-TERMINAL	: NUMBER { printf("%s", yylval.var_name); add_exp_vect(48+T_INT); }
-			| QUOTED_CHAR { printf("%s", yylval.var_name); add_exp_vect(48+T_CHAR); }
-			| QUOTED_STRING { printf("%s", yylval.var_name); add_exp_vect(48+T_STRING); }
-			| BOOL_VAL { printf("%s", yylval.var_name); add_exp_vect(48+T_BOOL); }
+TERMINAL	: NUMBER { fputs(yylval.var_name,fp_aux); add_exp_vect(48+T_INT); }
+			| QUOTED_CHAR { fputs(yylval.var_name,fp_aux); add_exp_vect(48+T_CHAR); }
+			| QUOTED_STRING { fputs(yylval.var_name,fp_aux); add_exp_vect(48+T_STRING); }
+			| BOOL_VAL { fputs(yylval.var_name,fp_aux); add_exp_vect(48+T_BOOL); }
 			;
-LITERAL_ARGUMENT	: NUMBER { printf("%s", yylval.var_name); current_data_type=T_INT;}
-			| QUOTED_CHAR { printf("%s", yylval.var_name); current_data_type=T_CHAR; }
-			| QUOTED_STRING { printf("%s", yylval.var_name); current_data_type=T_STRING; }
-			| BOOL_VAL { printf("%s", yylval.var_name); current_data_type=T_BOOL; }
+LITERAL_ARGUMENT	: NUMBER { fputs(yylval.var_name,fp_aux); current_data_type=T_INT;}
+			| QUOTED_CHAR { fputs(yylval.var_name,fp_aux); current_data_type=T_CHAR; }
+			| QUOTED_STRING { fputs(yylval.var_name,fp_aux); current_data_type=T_STRING; }
+			| BOOL_VAL { fputs(yylval.var_name,fp_aux); current_data_type=T_BOOL; }
 			;
 
-COMMENT	: ILCOMMENT		{ printf("%s\n", yylval.var_name); }
-		| MLCOMMENT		{ printf("%s", yylval.var_name); } // we need to add comments bewteen { } on methods with POSSIBLE_COMMENT maybe
+COMMENT	: ILCOMMENT		{ fputs(yylval.var_name,fp_aux); fputs("\n",fp_aux);}
+		| MLCOMMENT		{ fputs(yylval.var_name,fp_aux); } // we need to add comments bewteen { } on methods with POSSIBLE_COMMENT maybe
 		;
 
 HAS_COMMENT	: COMMENT
@@ -315,20 +331,20 @@ HAS_COMMENT	: COMMENT
 			;
 
 DELIMITER	: SEMICOLON { }
-			| RC { printf("}\n"); } // verify this
+			| RC { fputs("}\n",fp_aux); } // verify this
 			;
 
-MUST_SEMICOLON	: SEMICOLON { printf(";"); }
+MUST_SEMICOLON	: SEMICOLON { fputs(";",fp_aux); }
 				| /*empty*/ { yyerror("Syntax error: expected ';' at end of declaration"); }
 				;
 
-SEMICOLON_NOT_COMA	: SEMICOLON { printf(";"); }
-					| COMA { printf(","); strcat(syntax_errors,"Syntax error: expected ';' instead of ','\t"); } 
+SEMICOLON_NOT_COMA	: SEMICOLON { fputs(";",fp_aux); }
+					| COMA { fputs(",",fp_aux); strcat(syntax_errors,"Syntax error: expected ';' instead of ','\t"); } 
 					;
 
 MUST_EXPRESSION : EXPRESION
-				| VAR ASSIGNMENT { printf("%s", yylval.var_name); printf("="); } EXPRESION { }
-				| EXPRESION ASSIGNMENT { printf("="); } EXPRESION { strcat(syntax_errors,"Syntax error: expected '==' operator\n"); }
+				| VAR ASSIGNMENT { fputs(yylval.var_name,fp_aux); fputs("=",fp_aux); } EXPRESION { }
+				| EXPRESION ASSIGNMENT { fputs("=",fp_aux); } EXPRESION { strcat(syntax_errors,"Syntax error: expected '==' operator\n"); }
 				| /*empty*/ { strcat(syntax_errors,"Syntax error: expected expresion\n"); }
 				;
 
@@ -336,10 +352,12 @@ MUST_EXPRESSION : EXPRESION
 
 #include "lex.yy.c"
 void print_table_symbols(){
-		printf("\n");
+		fputs("\n",fp_aux);
 		for(int i=0; i<table_idx; i++)
 		{	
-			printf("%d var=%s Scope=%s type=%d\n",i,sym[i].var_name,sym[i].scope_name,sym[i].type);			
+			char str[256];
+			sprintf(str,"%d var=%s Scope=%s type=%d\n",i,sym[i].var_name,sym[i].scope_name,sym[i].type);
+			fputs(str,fp_aux);			
 		}
 }
 int check_constant(char var[MAX_NAME_LEN]){
@@ -356,7 +374,9 @@ int check_constant(char var[MAX_NAME_LEN]){
 			}
 	}
 	if(!is_correct){
-		printf("\nVariable %s was declared as a const \n",var);
+		char formatted_str[256];
+		sprintf(formatted_str,"\nVariable %s was declared as a const \n",var);
+		fputs(formatted_str,fp_aux);
 		yyerror("");
 	}
 
@@ -378,7 +398,9 @@ int verify_scope(char var[MAX_NAME_LEN]){
 	}
 
 	if(!found){
-		printf("\nVariable %s was not declared in the scope  \n",var);
+		char formatted_str[256];
+		sprintf(formatted_str,"\nVariable %s was not declared in the scope  \n",var);
+		fputs(formatted_str,fp_aux);
 		//print_table_symbols();
 		yyerror("");
 		//exit(0);
@@ -410,7 +432,9 @@ void insert_to_table(char var[MAX_NAME_LEN], int type)
 		table_idx++;
 	}
 	else {
-		printf("\nMultiple declaration of variable %s \n",var);
+		char formatted_str[256];
+		sprintf(formatted_str,"\nMultiple declaration of variable %s \n",var);
+		fputs(formatted_str,fp_aux);
 		yyerror("");
 		//exit(0);
 	}
@@ -429,7 +453,9 @@ void insert_argument_var(char var[MAX_NAME_LEN]){
 	if(type !=-1){
 		insert_type_param(type);
 	}else{
-		printf("\nVariable not declare %s \n",var);
+		char formatted_str[256];
+		sprintf(formatted_str,"\nVariable not declare %s \n",var);
+		fputs(formatted_str,fp_aux);
 		yyerror("");
 	}
 }
@@ -438,7 +464,7 @@ void insert_type_param(int type){
 }
 void print_tabs() {
 	for(int i = 0; i < tab_counter; i++){
-		printf("\t");
+		fputs("\t",fp_aux);
 	}
 	return;
 }
@@ -454,13 +480,16 @@ int main() {
 int yyerror(const char *msg) {
 	extern int yylineno;
 	int l = tab_counter*8;
-	printf("\n");
+	char formatted_msg[256];
+	fputs("\n",fp_aux);
 	//print_tabs();
 	for(int i=0; i<l;i++){
-		printf("^");
+		fputs("^",fp_aux);
 	}
-	printf("\nError on java file line [%d] :: %s\n", yylineno, msg);
+	sprintf(formatted_msg,"\nError on java file line [%d] :: %s\n", yylineno, msg);
+	fputs(formatted_msg, fp_aux);
 	success = 0;
+	error_counter++;
 	return 0;
 }
 
@@ -757,7 +786,9 @@ void verify_fun_table(){
 			char type[20]={0},arguments[200]={0};
 			convert_type_to_string(type,fun[i].type);
 			get_format_string_types(arguments,fun[i]);
-			printf("\n Function %s %s(%s) has not been declared \n",type,fun[i].var_name,arguments);
+			char formatted_str[300];
+			sprintf(formatted_str,"\n Function %s %s(%s) has not been declared \n",type,fun[i].var_name,arguments);
+			fputs(formatted_str,fp_aux);
 			break;
 		}
 		}		
@@ -836,4 +867,111 @@ void convert_type_to_string(char dest[20],int type){
 				strcat(dest,"bool");
 				break;
 			}
+}
+
+
+int merge_files(){
+	FILE *fp1 = fopen("fun.h", "r");
+	FILE *fp2 = fopen(AUXFILE, "r");
+	
+	// Open file to store the result
+	FILE *fp3 = fopen(CFILE, "w+");
+	char c;
+
+	int first_line_char = 1;
+
+	append_init(fp3);
+	
+	if (fp1 == NULL || fp2 == NULL || fp3 == NULL)
+	{
+			puts("Could not open files");
+			//exit(0);
+			return 1;
+	}
+
+	// Copy contents of first file to CFILE
+	while ((c = fgetc(fp1)) != EOF){
+		if(!first_line_char){ // for better format
+			if(c=='\n'){
+				first_line_char = 1;
+				fputc(';',fp3);
+			}
+			fputc(c, fp3);
+		}else{
+			first_line_char = 0;
+		}
+	}
+
+	// Copy contents of second file to CFILE
+	while ((c = fgetc(fp2)) != EOF)
+		fputc(c, fp3);
+	
+	//printf("Merged file1.txt and file2.txt into file3.txt");
+	
+	fclose(fp1);
+	fclose(fp2);
+	fclose(fp3);
+
+	return 0;
+}
+
+void print_error_counter(){
+	if(error_counter>0){
+		printf("\nErrors found: %d\nTRANSLATION FAILED !!!\n",error_counter);
+	}else{
+		printf("\nErrors found: %d\nTRANSLATION SUCCESSFUL !!!\n",error_counter);
+	}
+}
+
+int console_file(){
+	FILE *fp;
+	char c;
+
+	fp = fopen(CFILE, "r");
+    if (fp == NULL)
+    {
+        printf("Cannot open file \n");
+        exit(1);
+		return 1;
+    }
+  
+    // Read contents from file
+    c = fgetc(fp);
+    while (c != EOF) {
+        printf ("%c", c);
+        c = fgetc(fp);
+    }
+  
+    fclose(fp);
+    return 0;
+}
+
+int console_msg(){
+	FILE *fp;
+	char c;
+	int lines_counter=0;
+
+	fp = fopen(CFILE, "r");
+    if (fp == NULL)
+    {
+        printf("Cannot open file \n");
+        exit(1);
+		return 1;
+    }
+  
+    // Read contents from file
+    c = fgetc(fp);
+    while (c != EOF && lines_counter<=8) {
+		if(c=='\n'){
+			lines_counter++;
+		}
+        printf ("%c", c);
+        c = fgetc(fp);
+    }
+
+    fclose(fp);
+
+	print_error_counter();
+
+    return 0;
 }
