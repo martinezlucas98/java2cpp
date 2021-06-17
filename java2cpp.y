@@ -136,7 +136,7 @@ char var_name[MAX_NAME_LEN];
 
 %%
 
-program		: { fp_aux = fopen(AUXFILE,"w"); print_init();} HAS_COMMENT MAIN_CLASS LC {push_scope("global"); write_to_file("\n/* start Main Class */\n\n"); }  STATEMENTS  RC HAS_COMMENT {pop_scope(); write_to_file("\n/* end Main Class */\n"); verify_fun_table(); fclose(fp_aux); int r = merge_files(); console_msg(); exit(r); }
+program		: { fp_aux = fopen(AUXFILE,"w"); print_init();} HAS_COMMENT MAIN_CLASS LC {push_scope("global"); write_to_file("\n/* start Main Class */\n\n"); }  STATEMENTS  RC {pop_scope(); write_to_file("\n/* end Main Class */\n"); verify_fun_table(); fclose(fp_aux); merge_files();}{fp_aux = fopen(CFILE,"a");}HAS_COMMENT{fclose(fp_aux); console_msg(); exit(0); }
 			| /* Empty file */	{ write_to_file("\n"); exit(2); }
 			;
 
@@ -174,27 +174,32 @@ RETURN_ST 	: RETURN { write_to_file("return "); } EXPRESION MUST_SEMICOLON { wri
 BREAK_ST	: BREAK { write_to_file("break"); } MUST_SEMICOLON { write_to_file("\n"); }
 			;
 
-STDIO	: PRINTLN { write_to_file("std::cout"); } LP { write_to_file(" << "); } EXPRESION RP { write_to_file(" <<  std::endl"); } MUST_SEMICOLON { write_to_file("\n"); }
-		| PRINT { write_to_file("std::cout"); } LP { write_to_file(" << "); } EXPRESION RP MUST_SEMICOLON { write_to_file("\n"); }
-		| SCANNER_OBJECT
-		| MY_INPUT
+STDIO	: PRINTLN { write_to_file("std::cout"); } LP { write_to_file(" << "); } EXPRESSION_OUT RP { write_to_file(" <<  std::endl"); } MUST_SEMICOLON { write_to_file("\n"); }
+		| PRINT { write_to_file("std::cout"); } LP { write_to_file(" << "); } EXPRESSION_OUT RP MUST_SEMICOLON { write_to_file("\n"); }
+		| SCANNER { write_to_file("std::string "); } VAR { write_to_file(yylval.var_name);} ASSIGNMENT {write_to_file(";\n");} NEW SCANNER {print_tabs();write_to_file("std::cin");} LP SYS_IN RP {write_to_file(" >> ");} SEMICOLON { write_to_file(yylval.var_name); write_to_file(";\n");} 
+		//| VAR ASSIGNMENT NEW SCANNER {write_to_file("std::cin");} LP SYS_IN RP {write_to_file(" >> ");} { write_to_file(yylval.var_name); }
 		;
+
+EXPRESSION_OUT	: TERMINAL 
+				| TERMINAL PLUS {write_to_file(" << ");} EXPRESSION_OUT
+				| VAR
+				| VAR PLUS {write_to_file(" << ");}
+				;
 		
-    // Check MUST_SEMICOLON on inputs
-SCANNER_OBJECT : SCANNER { write_to_file("std::string "); } VAR { write_to_file(yylval.var_name);} ASSIGNMENT NEW SCANNER {write_to_file("std::cin");} LP SYS_IN RP {write_to_file(">>");} SEMICOLON { write_to_file(yylval.var_name); } 
-               ;
-
-
-MY_INPUT  : VAR ASSIGNMENT NEW SCANNER {write_to_file("std::cin");} LP SYS_IN RP {write_to_file(">>");} SEMICOLON { write_to_file(yylval.var_name); } 
-          ;
+    // Check MUST_SEMICOLON on inputs ::: SCANNER
 
 VAR_DECLARATION	:   VAR {insert_to_table(yylval.var_name,current_data_type); write_to_file(yylval.var_name); {clear_exp_vect('\0');}} HAS_ASSIGNMENT MUST_SEMICOLON { write_to_file("\n"); check_syntax_errors(); print_type_error_warning();}
 				        |   BRACKET_ARRAY VAR {insert_to_table(yylval.var_name,current_data_type);write_to_file(yylval.var_name); } HAS_ASSIGNMENT MUST_SEMICOLON { write_to_file("\n"); check_syntax_errors(); } // shift/reduce
 				        ;
 
 VAR_USE	:  VAR { print_tabs(); write_to_file(yylval.var_name);verify_scope(yylval.var_name);check_constant(yylval.var_name); clear_exp_vect('\0'); left_val_type = lookup_in_table(yylval.var_name);} ASSIGNMENT { write_to_file(" = "); } MUST_EXPRESSION {type_verification();} MUST_SEMICOLON { write_to_file("\n"); check_syntax_errors(); print_type_error_warning(); } //MUST_EXPRESSION
-					| VAR{ print_tabs(); write_to_file(yylval.var_name);insert_funtion(yylval.var_name,current_data_type,0);} LP { write_to_file("("); } PARAMS_TYPE RP { write_to_file(")"); } MUST_SEMICOLON { write_to_file("\n"); check_syntax_errors(); print_type_error_warning(); }
-				        ;
+					| VAR { print_tabs(); write_to_file(yylval.var_name);insert_funtion(yylval.var_name,current_data_type,0);} LP { write_to_file("("); } PARAMS_TYPE RP { write_to_file(")"); } MUST_SEMICOLON { write_to_file("\n"); check_syntax_errors(); print_type_error_warning(); }
+				    | VAR { print_tabs(); write_to_file(yylval.var_name);verify_scope(yylval.var_name);check_constant(yylval.var_name); clear_exp_vect('\0'); left_val_type = lookup_in_table(yylval.var_name);} LB NUMARRAY RB MULTI_NUMARRAY ASSIGNMENT { write_to_file(" = "); } MUST_EXPRESSION {type_verification();} MUST_SEMICOLON { write_to_file("\n"); check_syntax_errors(); print_type_error_warning(); }
+					;
+
+MULTI_NUMARRAY	: LB NUMARRAY RB MULTI_NUMARRAY
+				| /* */
+				;
 
 BRACKET_ARRAY	: LB NUMARRAY RB  BRACKET_ARRAY
 			|  LB RB  { bracket_counter++; } BRACKET_ARRAY
@@ -350,7 +355,7 @@ SEMICOLON_NOT_COMA	: SEMICOLON { write_to_file(";"); }
 MUST_EXPRESSION : EXPRESION
 				| VAR ASSIGNMENT { write_to_file(yylval.var_name); write_to_file("="); } EXPRESION { }
 				| EXPRESION ASSIGNMENT { write_to_file("="); } EXPRESION { strcat(syntax_errors,"Syntax error: expected '==' operator\n"); }
-				| /*empty*/ { strcat(syntax_errors,"Syntax error: expected expresion\n"); }
+				| /*empty*/ { strcat(syntax_errors,"Syntax error: expected expression\n"); }
 				;
 
 %%
