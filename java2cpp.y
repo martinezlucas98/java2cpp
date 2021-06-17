@@ -58,6 +58,7 @@
 	extern void get_format_string_types(char dest[200],struct fun_table source);
 	extern int merge_files();
 	extern int console_msg();
+	extern void write_to_file(char *s);
 
 	char var_list[MAX_VARIABLES][MAX_NAME_LEN];	// MAX_VARIABLES variable names with each variable being atmost MAX_NAME_LEN characters long
 	int string_or_var[MAX_VARIABLES];
@@ -101,6 +102,10 @@
 		fputs("#include <iostream>\n#include <string>\n\nusing namespace std;\n\n",fp);
 	}
 
+	void print_init(){
+		printf("#include <iostream>\n#include <string>\n\nusing namespace std;\n\n");
+	}
+
 %}
 
 %union{
@@ -131,8 +136,8 @@ char var_name[MAX_NAME_LEN];
 
 %%
 
-program		: { fp_aux = fopen(AUXFILE,"w"); } HAS_COMMENT MAIN_CLASS LC {push_scope("global"); fputs("\n/* start Main Class */\n\n",fp_aux); }  STATEMENTS  RC HAS_COMMENT {pop_scope(); fputs("\n/* end Main Class */\n",fp_aux); verify_fun_table(); fclose(fp_aux); int r = merge_files(); console_msg(); exit(r); }
-			| /* Empty file */	{ fputs("\n",fp_aux); exit(2); }
+program		: { fp_aux = fopen(AUXFILE,"w"); print_init();} HAS_COMMENT MAIN_CLASS LC {push_scope("global"); write_to_file("\n/* start Main Class */\n\n"); }  STATEMENTS  RC HAS_COMMENT {pop_scope(); write_to_file("\n/* end Main Class */\n"); verify_fun_table(); fclose(fp_aux); int r = merge_files(); console_msg(); exit(r); }
+			| /* Empty file */	{ write_to_file("\n"); exit(2); }
 			;
 
 STATEMENTS	: { print_tabs(); } DECLARATION STATEMENTS { }
@@ -155,40 +160,40 @@ IGNORE_SCOPE	: SCOPE IS_STATIC CONST TYPE
 DECLARATION 	:IGNORE_SCOPE CONST METHODS
 				|IGNORE_SCOPE CONST VAR_DECLARATION 
 				;
-CONST			: FINAL{ fputs("const ",fp_aux); current_constant=1; }
+CONST			: FINAL{ write_to_file("const "); current_constant=1; }
 				| /* empty */
-METHODS	:   VAR {push_scope(yylval.var_name);fputs(yylval.var_name,fp_aux);insert_funtion(yylval.var_name,current_data_type,1); }LP { fputs("(",fp_aux); } PARAMS RP { fputs(")",fp_aux); } LC	{ tab_counter++; fputs("{\n",fp_aux); } STATEMENTS RC { fputs("}\n",fp_aux); tab_counter--;pop_scope(); }	{ }//printf("static %s %s ( %s ) {", current_data_type, ); }
+METHODS	:   VAR {push_scope(yylval.var_name);write_to_file(yylval.var_name);insert_funtion(yylval.var_name,current_data_type,1); }LP { write_to_file("("); } PARAMS RP { write_to_file(")"); } LC	{ tab_counter++; write_to_file("{\n"); } STATEMENTS RC { write_to_file("}\n"); tab_counter--;pop_scope(); }	{ }//printf("static %s %s ( %s ) {", current_data_type, ); }
 		;
 IS_STATIC : STATIC
 			| /* */
 			;
       
-RETURN_ST 	: RETURN { fputs("return ",fp_aux); } EXPRESION MUST_SEMICOLON { fputs("\n",fp_aux); }
+RETURN_ST 	: RETURN { write_to_file("return "); } EXPRESION MUST_SEMICOLON { write_to_file("\n"); }
 			      ;
 
-BREAK_ST	: BREAK { fputs("break",fp_aux); } MUST_SEMICOLON { fputs("\n",fp_aux); }
+BREAK_ST	: BREAK { write_to_file("break"); } MUST_SEMICOLON { write_to_file("\n"); }
 			;
 
-STDIO	: PRINTLN { fputs("std::cout",fp_aux); } LP { fputs(" << ",fp_aux); } EXPRESION RP { fputs(" <<  std::endl",fp_aux); } MUST_SEMICOLON { fputs("\n",fp_aux); }
-		| PRINT { fputs("std::cout",fp_aux); } LP { fputs(" << ",fp_aux); } EXPRESION RP MUST_SEMICOLON { fputs("\n",fp_aux); }
+STDIO	: PRINTLN { write_to_file("std::cout"); } LP { write_to_file(" << "); } EXPRESION RP { write_to_file(" <<  std::endl"); } MUST_SEMICOLON { write_to_file("\n"); }
+		| PRINT { write_to_file("std::cout"); } LP { write_to_file(" << "); } EXPRESION RP MUST_SEMICOLON { write_to_file("\n"); }
 		| SCANNER_OBJECT
 		| MY_INPUT
 		;
 		
     // Check MUST_SEMICOLON on inputs
-SCANNER_OBJECT : SCANNER { fputs("std::string ",fp_aux); } VAR { fputs(yylval.var_name,fp_aux);} ASSIGNMENT NEW SCANNER {fputs("std::cin",fp_aux);} LP SYS_IN RP {fputs(">>",fp_aux);} SEMICOLON { fputs(yylval.var_name,fp_aux); } 
+SCANNER_OBJECT : SCANNER { write_to_file("std::string "); } VAR { write_to_file(yylval.var_name);} ASSIGNMENT NEW SCANNER {write_to_file("std::cin");} LP SYS_IN RP {write_to_file(">>");} SEMICOLON { write_to_file(yylval.var_name); } 
                ;
 
 
-MY_INPUT  : VAR ASSIGNMENT NEW SCANNER {fputs("std::cin",fp_aux);} LP SYS_IN RP {fputs(">>",fp_aux);} SEMICOLON { fputs(yylval.var_name,fp_aux); } 
+MY_INPUT  : VAR ASSIGNMENT NEW SCANNER {write_to_file("std::cin");} LP SYS_IN RP {write_to_file(">>");} SEMICOLON { write_to_file(yylval.var_name); } 
           ;
 
-VAR_DECLARATION	:   VAR {insert_to_table(yylval.var_name,current_data_type); fputs(yylval.var_name,fp_aux); {clear_exp_vect('\0');}} HAS_ASSIGNMENT MUST_SEMICOLON { fputs("\n",fp_aux); check_syntax_errors(); print_type_error_warning();}
-				        |   BRACKET_ARRAY VAR {insert_to_table(yylval.var_name,current_data_type);fputs(yylval.var_name,fp_aux); } HAS_ASSIGNMENT MUST_SEMICOLON { fputs("\n",fp_aux); check_syntax_errors(); } // shift/reduce
+VAR_DECLARATION	:   VAR {insert_to_table(yylval.var_name,current_data_type); write_to_file(yylval.var_name); {clear_exp_vect('\0');}} HAS_ASSIGNMENT MUST_SEMICOLON { write_to_file("\n"); check_syntax_errors(); print_type_error_warning();}
+				        |   BRACKET_ARRAY VAR {insert_to_table(yylval.var_name,current_data_type);write_to_file(yylval.var_name); } HAS_ASSIGNMENT MUST_SEMICOLON { write_to_file("\n"); check_syntax_errors(); } // shift/reduce
 				        ;
 
-VAR_USE	:  VAR { print_tabs(); fputs(yylval.var_name,fp_aux);verify_scope(yylval.var_name);check_constant(yylval.var_name); clear_exp_vect('\0'); left_val_type = lookup_in_table(yylval.var_name);} ASSIGNMENT { fputs(" = ",fp_aux); } MUST_EXPRESSION {type_verification();} MUST_SEMICOLON { fputs("\n",fp_aux); check_syntax_errors(); print_type_error_warning(); } //MUST_EXPRESSION
-					| VAR{ print_tabs(); fputs(yylval.var_name,fp_aux);insert_funtion(yylval.var_name,current_data_type,0);} LP { fputs("(",fp_aux); } PARAMS_TYPE RP { fputs(")",fp_aux); } MUST_SEMICOLON { fputs("\n",fp_aux); check_syntax_errors(); print_type_error_warning(); }
+VAR_USE	:  VAR { print_tabs(); write_to_file(yylval.var_name);verify_scope(yylval.var_name);check_constant(yylval.var_name); clear_exp_vect('\0'); left_val_type = lookup_in_table(yylval.var_name);} ASSIGNMENT { write_to_file(" = "); } MUST_EXPRESSION {type_verification();} MUST_SEMICOLON { write_to_file("\n"); check_syntax_errors(); print_type_error_warning(); } //MUST_EXPRESSION
+					| VAR{ print_tabs(); write_to_file(yylval.var_name);insert_funtion(yylval.var_name,current_data_type,0);} LP { write_to_file("("); } PARAMS_TYPE RP { write_to_file(")"); } MUST_SEMICOLON { write_to_file("\n"); check_syntax_errors(); print_type_error_warning(); }
 				        ;
 
 BRACKET_ARRAY	: LB NUMARRAY RB  BRACKET_ARRAY
@@ -197,46 +202,46 @@ BRACKET_ARRAY	: LB NUMARRAY RB  BRACKET_ARRAY
 			;
       
 // Check errors for if elseif 
-IF_STATEMENT	: IF LP { fputs("if (",fp_aux);create_scope_name_and_push_it(); } MUST_EXPRESSION RP LC { tab_counter++; fputs(") {\n",fp_aux); check_syntax_errors(); } STATEMENTS RC { pop_scope();tab_counter--; print_tabs(); fputs("}",fp_aux); } ELSE_VARIATIONS
+IF_STATEMENT	: IF LP { write_to_file("if (");create_scope_name_and_push_it(); } MUST_EXPRESSION RP LC { tab_counter++; write_to_file(") {\n"); check_syntax_errors(); } STATEMENTS RC { pop_scope();tab_counter--; print_tabs(); write_to_file("}"); } ELSE_VARIATIONS
 				      ;
 
-ELSE_VARIATIONS	: ELSE LC {create_scope_name_and_push_it(); tab_counter++; fputs(" else {\n",fp_aux); } STATEMENTS RC {pop_scope();tab_counter--; print_tabs(); fputs("}",fp_aux); }
-				| ELSEIF LP { fputs(" else if (",fp_aux); } MUST_EXPRESSION RP { fputs(")",fp_aux); check_syntax_errors(); } LC {create_scope_name_and_push_it();tab_counter++; fputs(") {\n",fp_aux); } STATEMENTS RC { pop_scope();tab_counter--;print_tabs(); fputs("}",fp_aux); } ELSE_VARIATIONS
-				| /* */ { fputs("\n",fp_aux); }
+ELSE_VARIATIONS	: ELSE LC {create_scope_name_and_push_it(); tab_counter++; write_to_file(" else {\n"); } STATEMENTS RC {pop_scope();tab_counter--; print_tabs(); write_to_file("}"); }
+				| ELSEIF LP { write_to_file(" else if ("); } MUST_EXPRESSION RP { write_to_file(")"); check_syntax_errors(); } LC {create_scope_name_and_push_it();tab_counter++; write_to_file(") {\n"); } STATEMENTS RC { pop_scope();tab_counter--;print_tabs(); write_to_file("}"); } ELSE_VARIATIONS
+				| /* */ { write_to_file("\n"); }
 				;
 				
-WHILE_LOOP  : WHILE LP {create_scope_name_and_push_it();fputs("while (",fp_aux); } DECL_EXPR RP LC { tab_counter++; fputs("){\n",fp_aux); } STATEMENTS RC {pop_scope();tab_counter--; print_tabs(); fputs("}\n",fp_aux); }
+WHILE_LOOP  : WHILE LP {create_scope_name_and_push_it();write_to_file("while ("); } DECL_EXPR RP LC { tab_counter++; write_to_file("){\n"); } STATEMENTS RC {pop_scope();tab_counter--; print_tabs(); write_to_file("}\n"); }
             ;
 
 
 
-FOR_LOOP	: FOR LP {create_scope_name_and_push_it(); fputs("for (",fp_aux); } FOR_PARAMS RP LC { tab_counter++; fputs(") {\n",fp_aux); check_syntax_errors(); } STATEMENTS RC {pop_scope(); tab_counter--; print_tabs(); fputs("}\n",fp_aux); }
+FOR_LOOP	: FOR LP {create_scope_name_and_push_it(); write_to_file("for ("); } FOR_PARAMS RP LC { tab_counter++; write_to_file(") {\n"); check_syntax_errors(); } STATEMENTS RC {pop_scope(); tab_counter--; print_tabs(); write_to_file("}\n"); }
 			    ;
 
 FOR_PARAMS	: DECL_EXPR SEMICOLON_NOT_COMA DECL_EXPR SEMICOLON_NOT_COMA EXPRESION // SEMICOLON_NOT_COMA causes 1 reduce/reduce conflict
-			| TYPE VAR COLON { fputs(yylval.var_name,fp_aux); } { fputs(" : ",fp_aux); } VAR { fputs(yylval.var_name,fp_aux); }// shift/reduce
+			| TYPE VAR COLON { write_to_file(yylval.var_name); } { write_to_file(" : "); } VAR { write_to_file(yylval.var_name); }// shift/reduce
 			;
 
 DECL_EXPR	: EXPRESION
-			| TYPE VAR {insert_to_table(yylval.var_name,current_data_type); fputs(yylval.var_name,fp_aux); } HAS_ASSIGNMENT
-			| VAR {verify_scope(yylval.var_name);fputs(yylval.var_name,fp_aux); } HAS_ASSIGNMENT//ASSIGNMENT { printf(" = "); } EXPRESION
+			| TYPE VAR {insert_to_table(yylval.var_name,current_data_type); write_to_file(yylval.var_name); } HAS_ASSIGNMENT
+			| VAR {verify_scope(yylval.var_name);write_to_file(yylval.var_name); } HAS_ASSIGNMENT//ASSIGNMENT { printf(" = "); } EXPRESION
 			| /* */  { }
       ;
 
-DO_WHILE_LOOP   : DO LC { fputs("do{\n",fp_aux); tab_counter++;} STATEMENTS RC WHILE LP {tab_counter--; print_tabs(); fputs("}while(",fp_aux); } DECL_EXPR RP { fputs(")",fp_aux); } MUST_SEMICOLON { fputs("\n",fp_aux); } 
+DO_WHILE_LOOP   : DO LC { write_to_file("do{\n"); tab_counter++;} STATEMENTS RC WHILE LP {tab_counter--; print_tabs(); write_to_file("}while("); } DECL_EXPR RP { write_to_file(")"); } MUST_SEMICOLON { write_to_file("\n"); } 
                 ;
 
 
-NUMARRAY	: NUMBER	{ char s[MAX_NAME_LEN+3]; sprintf(s,"[%s]", yylval.var_name); fputs(s,fp_aux); }
-			| VAR		{ char s[MAX_NAME_LEN+3]; sprintf(s,"[%s]", yylval.var_name); fputs(s,fp_aux); }
+NUMARRAY	: NUMBER	{ char s[MAX_NAME_LEN+3]; sprintf(s,"[%s]", yylval.var_name); write_to_file(s); }
+			| VAR		{ char s[MAX_NAME_LEN+3]; sprintf(s,"[%s]", yylval.var_name); write_to_file(s); }
 			;
 
-HAS_ASSIGNMENT	: ASSIGNMENT { fputs(" = ",fp_aux); } MUST_EXPRESSION {type_verification();} //check this
+HAS_ASSIGNMENT	: ASSIGNMENT { write_to_file(" = "); } MUST_EXPRESSION {type_verification();} //check this
 				        | ASSIGNMENT EXPRESION_ARRAY
 				        | /* No assignment */ {}
 				        ;
 
-MAIN_METHOD_DECLARATION	: MAIN_METHOD { push_scope("main");fputs("int main(int argc, char **argv)",fp_aux); } LC { tab_counter++; fputs("{\n",fp_aux); } STATEMENTS RC { fputs("\n}\n",fp_aux); tab_counter--; pop_scope();}
+MAIN_METHOD_DECLARATION	: MAIN_METHOD { push_scope("main");write_to_file("int main(int argc, char **argv)"); } LC { tab_counter++; write_to_file("{\n"); } STATEMENTS RC { write_to_file("\n}\n"); tab_counter--; pop_scope();}
 			                  ;
 
 
@@ -247,49 +252,49 @@ SCOPE	: PUBLIC
 		  ;
 
 PARAMS	: HAS_PARAMS PARAMS
-		    | COMA { fputs(",",fp_aux); }  HAS_PARAMS
-		    | /* No parameters */		{ fputs(" ",fp_aux); }
+		    | COMA { write_to_file(","); }  HAS_PARAMS
+		    | /* No parameters */		{ write_to_file(" "); }
 		    ;
-PARAMS_TYPE : VAR {fputs(yylval.var_name,fp_aux);insert_argument_var( yylval.var_name);} COMA { fputs(",",fp_aux); } PARAMS_TYPE
-			| VAR{fputs(yylval.var_name,fp_aux);insert_argument_var( yylval.var_name);}
-			| LITERAL_ARGUMENT {insert_type_param(current_data_type);} COMA { fputs(",",fp_aux); } PARAMS_TYPE
+PARAMS_TYPE : VAR {write_to_file(yylval.var_name);insert_argument_var( yylval.var_name);} COMA { write_to_file(","); } PARAMS_TYPE
+			| VAR{write_to_file(yylval.var_name);insert_argument_var( yylval.var_name);}
+			| LITERAL_ARGUMENT {insert_type_param(current_data_type);} COMA { write_to_file(","); } PARAMS_TYPE
 			| LITERAL_ARGUMENT {insert_type_param(current_data_type);} 
 			| /* empty*/
 			;
 
-HAS_PARAMS	: TYPE VAR {insert_to_table(yylval.var_name,current_data_type);fputs(yylval.var_name,fp_aux);insert_type_param(current_data_type); }
-			      | TYPE  BRACKET_ARRAY VAR {insert_to_table(yylval.var_name,current_data_type); fputs(yylval.var_name,fp_aux);fputs("[]",fp_aux);bracket_counter-- ;for(;bracket_counter>0;bracket_counter--){char s[255];sprintf(s,"[%d]",DIMENSION);fputs(s,fp_aux);}}
+HAS_PARAMS	: TYPE VAR {insert_to_table(yylval.var_name,current_data_type);write_to_file(yylval.var_name);insert_type_param(current_data_type); }
+			      | TYPE  BRACKET_ARRAY VAR {insert_to_table(yylval.var_name,current_data_type); write_to_file(yylval.var_name);write_to_file("[]");bracket_counter-- ;for(;bracket_counter>0;bracket_counter--){char s[255];sprintf(s,"[%d]",DIMENSION);write_to_file(s);}}
 			      | /* */
 			      ;
 
-EXPRESION	: EXPRESION LAND { fputs(" && ",fp_aux); } EXPRESION
-			| EXPRESION LOR { fputs(" || ",fp_aux); } EXPRESION
-			| EXPRESION LEQ { fputs(" <= ",fp_aux); } EXPRESION
-			| EXPRESION GEQ { fputs(" >= ",fp_aux); } EXPRESION
-			| EXPRESION GT { fputs(" > ",fp_aux); } EXPRESION
-			| EXPRESION LT { fputs(" < ",fp_aux); } EXPRESION
-			| EXPRESION NEQ { fputs(" != ",fp_aux); } EXPRESION
-			| EXPRESION DEQ { fputs(" == ",fp_aux); } EXPRESION
-			| NOT { fputs("!",fp_aux); } EXPRESION
-			| EXPRESION PLUS { fputs(" + ",fp_aux); add_exp_vect('+');} EXPRESION
-			| EXPRESION MINUS { fputs(" - ",fp_aux); add_exp_vect('-');} EXPRESION
-			| EXPRESION MUL { fputs(" * ",fp_aux); add_exp_vect('*');} EXPRESION
-			| EXPRESION DIV { fputs(" / ",fp_aux); add_exp_vect('/'); } EXPRESION
-			| EXPRESION MOD { fputs(" %% ",fp_aux); } EXPRESION
-			| LP { fputs("(",fp_aux); add_exp_vect('(');} EXPRESION RP { fputs(")",fp_aux); add_exp_vect(')');}
-			| EXPRESION PLUS PLUS { fputs("++",fp_aux); }
-			| EXPRESION MINUS MINUS { fputs("--",fp_aux); }
+EXPRESION	: EXPRESION LAND { write_to_file(" && "); } EXPRESION
+			| EXPRESION LOR { write_to_file(" || "); } EXPRESION
+			| EXPRESION LEQ { write_to_file(" <= "); } EXPRESION
+			| EXPRESION GEQ { write_to_file(" >= "); } EXPRESION
+			| EXPRESION GT { write_to_file(" > "); } EXPRESION
+			| EXPRESION LT { write_to_file(" < "); } EXPRESION
+			| EXPRESION NEQ { write_to_file(" != "); } EXPRESION
+			| EXPRESION DEQ { write_to_file(" == "); } EXPRESION
+			| NOT { write_to_file("!"); } EXPRESION
+			| EXPRESION PLUS { write_to_file(" + "); add_exp_vect('+');} EXPRESION
+			| EXPRESION MINUS { write_to_file(" - "); add_exp_vect('-');} EXPRESION
+			| EXPRESION MUL { write_to_file(" * "); add_exp_vect('*');} EXPRESION
+			| EXPRESION DIV { write_to_file(" / "); add_exp_vect('/'); } EXPRESION
+			| EXPRESION MOD { write_to_file(" %% "); } EXPRESION
+			| LP { write_to_file("("); add_exp_vect('(');} EXPRESION RP { write_to_file(")"); add_exp_vect(')');}
+			| EXPRESION PLUS PLUS { write_to_file("++"); }
+			| EXPRESION MINUS MINUS { write_to_file("--"); }
 			| TERMINAL
-			| VAR { fputs(yylval.var_name,fp_aux); verify_scope(yylval.var_name); add_exp_vect_var(48+lookup_in_table_alt(yylval.var_name)); }
+			| VAR { write_to_file(yylval.var_name); verify_scope(yylval.var_name); add_exp_vect_var(48+lookup_in_table_alt(yylval.var_name)); }
 			;
 
 EXPRESION_ARRAY	: NEW TYPE_NO_PRINT BRACKET_ARRAY {bracket_counter=0;}
-				        | { for(;bracket_counter>0;bracket_counter--)fputs("[]",fp_aux); } LC { fputs(" = {",fp_aux); } EXPRESION_ARRAY_INITIALIZE RC { fputs("}",fp_aux); }
+				        | { for(;bracket_counter>0;bracket_counter--)write_to_file("[]"); } LC { write_to_file(" = {"); } EXPRESION_ARRAY_INITIALIZE RC { write_to_file("}"); }
 				        ;
 
-EXPRESION_ARRAY_INITIALIZE	: TERMINAL COMA { fputs(",",fp_aux); } EXPRESION_ARRAY_INITIALIZE
-							| COMA { fputs(",",fp_aux); } LC { fputs("{",fp_aux); } EXPRESION_ARRAY_INITIALIZE RC { fputs("}",fp_aux); } EXPRESION_ARRAY_INITIALIZE
-							|  LC { fputs("{",fp_aux); } EXPRESION_ARRAY_INITIALIZE RC { fputs("}",fp_aux); } EXPRESION_ARRAY_INITIALIZE
+EXPRESION_ARRAY_INITIALIZE	: TERMINAL COMA { write_to_file(","); } EXPRESION_ARRAY_INITIALIZE
+							| COMA { write_to_file(","); } LC { write_to_file("{"); } EXPRESION_ARRAY_INITIALIZE RC { write_to_file("}"); } EXPRESION_ARRAY_INITIALIZE
+							|  LC { write_to_file("{"); } EXPRESION_ARRAY_INITIALIZE RC { write_to_file("}"); } EXPRESION_ARRAY_INITIALIZE
 							| TERMINAL
 							| /* */
 							;
@@ -302,28 +307,28 @@ TYPE_NO_PRINT	: INT
 				| BOOLEAN
 				;
 
-TYPE	: INT { $$=$1; current_data_type=$1;	fputs("int ",fp_aux); }
-		| CHAR  { $$=$1; current_data_type=$1; fputs("char ",fp_aux); }
-		| FLOAT { $$=$1; current_data_type=$1; fputs("float ",fp_aux); }
-		| DOUBLE { $$=$1; current_data_type=$1; fputs("double ",fp_aux); }
-		| STRING { $$=$1; current_data_type=$1; fputs("std::string ",fp_aux); }
-		| BOOLEAN { $$=$1; current_data_type=$1; fputs("bool ",fp_aux); }
-		| VOID { fputs("void ",fp_aux); }
+TYPE	: INT { $$=$1; current_data_type=$1;	write_to_file("int "); }
+		| CHAR  { $$=$1; current_data_type=$1; write_to_file("char "); }
+		| FLOAT { $$=$1; current_data_type=$1; write_to_file("float "); }
+		| DOUBLE { $$=$1; current_data_type=$1; write_to_file("double "); }
+		| STRING { $$=$1; current_data_type=$1; write_to_file("std::string "); }
+		| BOOLEAN { $$=$1; current_data_type=$1; write_to_file("bool "); }
+		| VOID { write_to_file("void "); }
 		;
 
-TERMINAL	: NUMBER { fputs(yylval.var_name,fp_aux); add_exp_vect(48+T_INT); }
-			| QUOTED_CHAR { fputs(yylval.var_name,fp_aux); add_exp_vect(48+T_CHAR); }
-			| QUOTED_STRING { fputs(yylval.var_name,fp_aux); add_exp_vect(48+T_STRING); }
-			| BOOL_VAL { fputs(yylval.var_name,fp_aux); add_exp_vect(48+T_BOOL); }
+TERMINAL	: NUMBER { write_to_file(yylval.var_name); add_exp_vect(48+T_INT); }
+			| QUOTED_CHAR { write_to_file(yylval.var_name); add_exp_vect(48+T_CHAR); }
+			| QUOTED_STRING { write_to_file(yylval.var_name); add_exp_vect(48+T_STRING); }
+			| BOOL_VAL { write_to_file(yylval.var_name); add_exp_vect(48+T_BOOL); }
 			;
-LITERAL_ARGUMENT	: NUMBER { fputs(yylval.var_name,fp_aux); current_data_type=T_INT;}
-			| QUOTED_CHAR { fputs(yylval.var_name,fp_aux); current_data_type=T_CHAR; }
-			| QUOTED_STRING { fputs(yylval.var_name,fp_aux); current_data_type=T_STRING; }
-			| BOOL_VAL { fputs(yylval.var_name,fp_aux); current_data_type=T_BOOL; }
+LITERAL_ARGUMENT	: NUMBER { write_to_file(yylval.var_name); current_data_type=T_INT;}
+			| QUOTED_CHAR { write_to_file(yylval.var_name); current_data_type=T_CHAR; }
+			| QUOTED_STRING { write_to_file(yylval.var_name); current_data_type=T_STRING; }
+			| BOOL_VAL { write_to_file(yylval.var_name); current_data_type=T_BOOL; }
 			;
 
-COMMENT	: ILCOMMENT		{ fputs(yylval.var_name,fp_aux); fputs("\n",fp_aux);}
-		| MLCOMMENT		{ fputs(yylval.var_name,fp_aux); } // we need to add comments bewteen { } on methods with POSSIBLE_COMMENT maybe
+COMMENT	: ILCOMMENT		{ write_to_file(yylval.var_name); write_to_file("\n"); }
+		| MLCOMMENT		{ write_to_file(yylval.var_name); write_to_file("\n"); } // we need to add comments bewteen { } on methods with POSSIBLE_COMMENT maybe
 		;
 
 HAS_COMMENT	: COMMENT
@@ -331,20 +336,20 @@ HAS_COMMENT	: COMMENT
 			;
 
 DELIMITER	: SEMICOLON { }
-			| RC { fputs("}\n",fp_aux); } // verify this
+			| RC { write_to_file("}\n"); } // verify this
 			;
 
-MUST_SEMICOLON	: SEMICOLON { fputs(";",fp_aux); }
+MUST_SEMICOLON	: SEMICOLON { write_to_file(";"); }
 				| /*empty*/ { yyerror("Syntax error: expected ';' at end of declaration"); }
 				;
 
-SEMICOLON_NOT_COMA	: SEMICOLON { fputs(";",fp_aux); }
-					| COMA { fputs(",",fp_aux); strcat(syntax_errors,"Syntax error: expected ';' instead of ','\t"); } 
+SEMICOLON_NOT_COMA	: SEMICOLON { write_to_file(";"); }
+					| COMA { write_to_file(","); strcat(syntax_errors,"Syntax error: expected ';' instead of ','\t"); } 
 					;
 
 MUST_EXPRESSION : EXPRESION
-				| VAR ASSIGNMENT { fputs(yylval.var_name,fp_aux); fputs("=",fp_aux); } EXPRESION { }
-				| EXPRESION ASSIGNMENT { fputs("=",fp_aux); } EXPRESION { strcat(syntax_errors,"Syntax error: expected '==' operator\n"); }
+				| VAR ASSIGNMENT { write_to_file(yylval.var_name); write_to_file("="); } EXPRESION { }
+				| EXPRESION ASSIGNMENT { write_to_file("="); } EXPRESION { strcat(syntax_errors,"Syntax error: expected '==' operator\n"); }
 				| /*empty*/ { strcat(syntax_errors,"Syntax error: expected expresion\n"); }
 				;
 
@@ -352,12 +357,12 @@ MUST_EXPRESSION : EXPRESION
 
 #include "lex.yy.c"
 void print_table_symbols(){
-		fputs("\n",fp_aux);
+		write_to_file("\n");
 		for(int i=0; i<table_idx; i++)
 		{	
 			char str[256];
 			sprintf(str,"%d var=%s Scope=%s type=%d\n",i,sym[i].var_name,sym[i].scope_name,sym[i].type);
-			fputs(str,fp_aux);			
+			write_to_file(str);			
 		}
 }
 int check_constant(char var[MAX_NAME_LEN]){
@@ -376,7 +381,7 @@ int check_constant(char var[MAX_NAME_LEN]){
 	if(!is_correct){
 		char formatted_str[256];
 		sprintf(formatted_str,"\nVariable %s was declared as a const \n",var);
-		fputs(formatted_str,fp_aux);
+		write_to_file(formatted_str);
 		yyerror("");
 	}
 
@@ -400,7 +405,7 @@ int verify_scope(char var[MAX_NAME_LEN]){
 	if(!found){
 		char formatted_str[256];
 		sprintf(formatted_str,"\nVariable %s was not declared in the scope  \n",var);
-		fputs(formatted_str,fp_aux);
+		write_to_file(formatted_str);
 		//print_table_symbols();
 		yyerror("");
 		//exit(0);
@@ -434,7 +439,7 @@ void insert_to_table(char var[MAX_NAME_LEN], int type)
 	else {
 		char formatted_str[256];
 		sprintf(formatted_str,"\nMultiple declaration of variable %s \n",var);
-		fputs(formatted_str,fp_aux);
+		write_to_file(formatted_str);
 		yyerror("");
 		//exit(0);
 	}
@@ -455,7 +460,7 @@ void insert_argument_var(char var[MAX_NAME_LEN]){
 	}else{
 		char formatted_str[256];
 		sprintf(formatted_str,"\nVariable not declare %s \n",var);
-		fputs(formatted_str,fp_aux);
+		write_to_file(formatted_str);
 		yyerror("");
 	}
 }
@@ -464,12 +469,16 @@ void insert_type_param(int type){
 }
 void print_tabs() {
 	for(int i = 0; i < tab_counter; i++){
-		fputs("\t",fp_aux);
+		write_to_file("\t");
 	}
 	return;
 }
 
 int main() {
+	// clear files
+	fclose(fopen(CFILE,"w"));
+	fclose(fopen("fun.h","w"));
+	fclose(fopen(AUXFILE,"w"));
 	#if YYDEBUG
         yydebug = 1;
     #endif
@@ -481,13 +490,13 @@ int yyerror(const char *msg) {
 	extern int yylineno;
 	int l = tab_counter*8;
 	char formatted_msg[256];
-	fputs("\n",fp_aux);
+	write_to_file("\n");
 	//print_tabs();
 	for(int i=0; i<l;i++){
-		fputs("^",fp_aux);
+		write_to_file("^");
 	}
 	sprintf(formatted_msg,"\nError on java file line [%d] :: %s\n", yylineno, msg);
-	fputs(formatted_msg, fp_aux);
+	write_to_file(formatted_msg);
 	success = 0;
 	error_counter++;
 	return 0;
@@ -579,7 +588,8 @@ void print_type_error_warning(){
 			//yyerror(aux);
 			yyerror(type_cast_str_error);
 			strcpy(type_cast_str_error,"\0");
-		}else if(left_val_type!=right_val_type ){
+		}else if(left_val_type!=right_val_type && !casting_table.implicit[right_val_type][left_val_type]){
+			printf("\nl: %d, r: %d\n", left_val_type, right_val_type);
 			char aux2[512];
 			char *sty1 = type_to_str(48+right_val_type);
 			char * sty2 = type_to_str(48+left_val_type);
@@ -788,7 +798,7 @@ void verify_fun_table(){
 			get_format_string_types(arguments,fun[i]);
 			char formatted_str[300];
 			sprintf(formatted_str,"\n Function %s %s(%s) has not been declared \n",type,fun[i].var_name,arguments);
-			fputs(formatted_str,fp_aux);
+			write_to_file(formatted_str);
 			break;
 		}
 		}		
@@ -923,29 +933,6 @@ void print_error_counter(){
 	}
 }
 
-int console_file(){
-	FILE *fp;
-	char c;
-
-	fp = fopen(CFILE, "r");
-    if (fp == NULL)
-    {
-        printf("Cannot open file \n");
-        exit(1);
-		return 1;
-    }
-  
-    // Read contents from file
-    c = fgetc(fp);
-    while (c != EOF) {
-        printf ("%c", c);
-        c = fgetc(fp);
-    }
-  
-    fclose(fp);
-    return 0;
-}
-
 int console_msg(){
 	FILE *fp;
 	char c;
@@ -958,7 +945,8 @@ int console_msg(){
         exit(1);
 		return 1;
     }
-  
+
+	printf("\n");
     // Read contents from file
     c = fgetc(fp);
     while (c != EOF && lines_counter<=8) {
@@ -971,8 +959,13 @@ int console_msg(){
 
     fclose(fp);
 
-	printf("\nTranslation file name: %s\n",CFILE);
+	printf("Check the translation file: %s\n",CFILE);
 	print_error_counter();
 
     return 0;
+}
+
+void write_to_file(char *s){
+	fputs(s,fp_aux);
+	printf("%s",s);
 }
