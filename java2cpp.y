@@ -583,7 +583,8 @@ void print_type_error_warning(){
 			//yyerror(aux);
 			yyerror(type_cast_str_error);
 			strcpy(type_cast_str_error,"\0");
-		}else if(left_val_type!=right_val_type ){
+		}else if(left_val_type!=right_val_type && !casting_table.implicit[right_val_type][left_val_type]){
+			printf("\nl: %d, r: %d\n", left_val_type, right_val_type);
 			char aux2[512];
 			char *sty1 = type_to_str(48+right_val_type);
 			char * sty2 = type_to_str(48+left_val_type);
