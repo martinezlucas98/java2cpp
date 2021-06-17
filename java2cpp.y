@@ -193,8 +193,13 @@ VAR_DECLARATION	:   VAR {insert_to_table(yylval.var_name,current_data_type); wri
 				        ;
 
 VAR_USE	:  VAR { print_tabs(); write_to_file(yylval.var_name);verify_scope(yylval.var_name);check_constant(yylval.var_name); clear_exp_vect('\0'); left_val_type = lookup_in_table(yylval.var_name);} ASSIGNMENT { write_to_file(" = "); } MUST_EXPRESSION {type_verification();} MUST_SEMICOLON { write_to_file("\n"); check_syntax_errors(); print_type_error_warning(); } //MUST_EXPRESSION
-					| VAR{ print_tabs(); write_to_file(yylval.var_name);insert_funtion(yylval.var_name,current_data_type,0);} LP { write_to_file("("); } PARAMS_TYPE RP { write_to_file(")"); } MUST_SEMICOLON { write_to_file("\n"); check_syntax_errors(); print_type_error_warning(); }
-				        ;
+					| VAR { print_tabs(); write_to_file(yylval.var_name);insert_funtion(yylval.var_name,current_data_type,0);} LP { write_to_file("("); } PARAMS_TYPE RP { write_to_file(")"); } MUST_SEMICOLON { write_to_file("\n"); check_syntax_errors(); print_type_error_warning(); }
+				    | VAR { print_tabs(); write_to_file(yylval.var_name);verify_scope(yylval.var_name);check_constant(yylval.var_name); clear_exp_vect('\0'); left_val_type = lookup_in_table(yylval.var_name);} LB NUMARRAY RB MULTI_NUMARRAY ASSIGNMENT { write_to_file(" = "); } MUST_EXPRESSION {type_verification();} MUST_SEMICOLON { write_to_file("\n"); check_syntax_errors(); print_type_error_warning(); }
+					;
+
+MULTI_NUMARRAY	: LB NUMARRAY RB MULTI_NUMARRAY
+				| /* */
+				;
 
 BRACKET_ARRAY	: LB NUMARRAY RB  BRACKET_ARRAY
 			|  LB RB  { bracket_counter++; } BRACKET_ARRAY
