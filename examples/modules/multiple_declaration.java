@@ -3,8 +3,8 @@ public class Main {
 
 public static void funbar(int d) {
     int x;
-    // int d;
-    // int x; 
+    int d;
+    int x; 
   }
 
 }
