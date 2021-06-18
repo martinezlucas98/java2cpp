@@ -1,2 +1,1 @@
- int funbar(int,char)
- int bar(char)
+ int funbar(int)

@@ -83,24 +83,27 @@
 
 
 	// functions
-	void append_init(FILE *fp){
+		void append_init(FILE *fp){
 		time_t t = time(NULL);
   		struct tm now = *localtime(&t);
 		char version_msg[32];
-		char github_msg[64];
+		char owners_msg[128];
 		char date_msg[128];
 
 		char *version = "alpha 1.0";
-		char *github = "https://github.com/martinezlucas98/java2cpp";
+		char owners[2][64] = {{"https://github.com/martinezlucas98"},{"https://github.com/Joaquinecc"}};
+		char aux[54];
 
-		sprintf(version_msg, "*\tVersion: %s\n", version);
-		sprintf(github_msg, "*\tGithub: %s\n", github);
-		sprintf(date_msg, "*\tTranslated on: %d-%02d-%02d %02d:%02d:%02d (yyyy-MM-dd hh:mm:ss)\n", now.tm_year + 1900, now.tm_mon + 1, now.tm_mday, now.tm_hour, now.tm_min, now.tm_sec);
+		sprintf(version_msg, "*\tVersion:\t%s\n", version);
+		sprintf(owners_msg, "*\tCode owners:\t%s\n", owners[0]);
+		snprintf(aux,70,"*\t\t\t%s\n",owners[1]);
+		strcat(owners_msg,aux);
+		sprintf(date_msg, "*\tTranslated on:\t%d-%02d-%02d %02d:%02d:%02d (yyyy-MM-dd hh:mm:ss)\n", now.tm_year + 1900, now.tm_mon + 1, now.tm_mday, now.tm_hour, now.tm_min, now.tm_sec);
 
 		fputs("/*\n*\t===================================================================\n",fp);
 		fputs("*\tTranslated from java to c++ using java2cpp\n",fp);
 		fputs(version_msg,fp);
-		fputs(github_msg,fp);
+		fputs(owners_msg,fp);
 		fputs(date_msg,fp);
 		fputs("*\t===================================================================\n*/\n\n",fp);
 		fputs("#include <iostream>\n#include <string>\n\nusing namespace std;\n\n",fp);
