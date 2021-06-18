@@ -13,6 +13,7 @@
 	#define INTNOVAL -2
 	#define AUXFILE "auxjava2cpp.txt"
 	#define CFILE "java2cpp_translation.cc"
+	#define DEF_AUX_MSG "// This is just an auxiliar file used during the translation step"
 	int yylex(void);
 	int yyerror(const char *s);
 	int success = 1;
@@ -61,6 +62,7 @@
 	extern void write_to_file(char *s);
 	extern void print_check_constant_result();
 	extern void print_multidecl_error();
+	extern void clean_aux_files();
 
 	char check_constant_result[256] = "";
 	char multiple_decl_msg[256] = "";
@@ -143,8 +145,8 @@ char var_name[MAX_NAME_LEN];
 
 %%
 
-program		: { fp_aux = fopen(AUXFILE,"w"); } HAS_COMMENT MAIN_CLASS LC {push_scope("global"); write_to_file("\n/* start Main Class */\n\n"); }  STATEMENTS  RC {pop_scope(); write_to_file("\n/* end Main Class */\n"); verify_fun_table(); fclose(fp_aux); merge_files();}{fp_aux = fopen(CFILE,"a");}HAS_COMMENT{fclose(fp_aux); console_msg(); exit(0); }
-			| /* Empty file */	{ write_to_file("\n"); exit(2); }
+program		: { fp_aux = fopen(AUXFILE,"w"); } HAS_COMMENT MAIN_CLASS LC {push_scope("global"); write_to_file("\n/* start Main Class */\n\n"); }  STATEMENTS  RC {pop_scope(); write_to_file("\n/* end Main Class */\n"); verify_fun_table(); fclose(fp_aux); merge_files();}{fp_aux = fopen(CFILE,"a");}HAS_COMMENT{fclose(fp_aux); console_msg(); clean_aux_files(); exit(0); }
+			| /* Empty file */	{ write_to_file("INVALID JAVA2CPP COMPATIBLE JAVA FORMAT\n"); clean_aux_files(); exit(2); }
 			;
 
 STATEMENTS	: { print_tabs(); } DECLARATION STATEMENTS { }
@@ -935,4 +937,15 @@ int console_msg(){
 
 void write_to_file(char *s){
 	fputs(s,fp_aux);
+}
+
+void clean_aux_files(){
+	FILE *fp1 = fopen("fun.h", "w");
+	FILE *fp2 = fopen(AUXFILE, "w");
+
+	fputs(DEF_AUX_MSG, fp1);
+	fputs(DEF_AUX_MSG, fp2);
+
+	fclose(fp1);
+	fclose(fp2);
 }

@@ -4,7 +4,7 @@
 *	Version:	alpha 1.0
 *	Code owners:	https://github.com/martinezlucas98
 *			https://github.com/Joaquinecc
-*	Translated on:	2021-06-18 16:38:12 (yyyy-MM-dd hh:mm:ss)
+*	Translated on:	2021-06-18 16:49:41 (yyyy-MM-dd hh:mm:ss)
 *	===================================================================
 */
 
