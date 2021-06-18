@@ -59,7 +59,11 @@
 	extern int merge_files();
 	extern int console_msg();
 	extern void write_to_file(char *s);
+	extern void print_check_constant_result();
+	extern void print_multidecl_error();
 
+	char check_constant_result[256] = "";
+	char multiple_decl_msg[256] = "";
 	char var_list[MAX_VARIABLES][MAX_NAME_LEN];	// MAX_VARIABLES variable names with each variable being atmost MAX_NAME_LEN characters long
 	int string_or_var[MAX_VARIABLES];
 	//extern int *yytext;
@@ -188,13 +192,13 @@ EXPRESSION_OUT	: TERMINAL
 		
     // Check MUST_SEMICOLON on inputs ::: SCANNER
 
-VAR_DECLARATION	:   VAR {insert_to_table(yylval.var_name,current_data_type); write_to_file(yylval.var_name); {clear_exp_vect('\0');}} HAS_ASSIGNMENT MUST_SEMICOLON { write_to_file("\n"); check_syntax_errors(); print_type_error_warning();}
-				        |   BRACKET_ARRAY VAR {insert_to_table(yylval.var_name,current_data_type);write_to_file(yylval.var_name); } HAS_ASSIGNMENT MUST_SEMICOLON { write_to_file("\n"); check_syntax_errors(); } // shift/reduce
+VAR_DECLARATION	:   VAR {insert_to_table(yylval.var_name,current_data_type); write_to_file(yylval.var_name); {clear_exp_vect('\0');}} HAS_ASSIGNMENT MUST_SEMICOLON { write_to_file("\n"); check_syntax_errors(); print_type_error_warning();print_multidecl_error();}
+				        |   BRACKET_ARRAY VAR {insert_to_table(yylval.var_name,current_data_type);write_to_file(yylval.var_name); } HAS_ASSIGNMENT MUST_SEMICOLON { write_to_file("\n"); check_syntax_errors(); print_multidecl_error();} // shift/reduce
 				        ;
 
-VAR_USE	:  VAR { print_tabs(); write_to_file(yylval.var_name);verify_scope(yylval.var_name);check_constant(yylval.var_name); clear_exp_vect('\0'); left_val_type = lookup_in_table(yylval.var_name);} ASSIGNMENT { write_to_file(" = "); } MUST_EXPRESSION {type_verification();} MUST_SEMICOLON { write_to_file("\n"); check_syntax_errors(); print_type_error_warning(); } //MUST_EXPRESSION
+VAR_USE	:  VAR { print_tabs(); write_to_file(yylval.var_name);verify_scope(yylval.var_name);check_constant(yylval.var_name); clear_exp_vect('\0'); left_val_type = lookup_in_table(yylval.var_name);} ASSIGNMENT { write_to_file(" = "); } MUST_EXPRESSION {type_verification();} MUST_SEMICOLON { write_to_file("\n"); print_check_constant_result(); check_syntax_errors(); print_type_error_warning(); } //MUST_EXPRESSION
 					| VAR { print_tabs(); write_to_file(yylval.var_name);insert_funtion(yylval.var_name,current_data_type,0);} LP { write_to_file("("); } PARAMS_TYPE RP { write_to_file(")"); } MUST_SEMICOLON { write_to_file("\n"); check_syntax_errors(); print_type_error_warning(); }
-				    | VAR { print_tabs(); write_to_file(yylval.var_name);verify_scope(yylval.var_name);check_constant(yylval.var_name); clear_exp_vect('\0'); left_val_type = lookup_in_table(yylval.var_name);} LB NUMARRAY RB MULTI_NUMARRAY ASSIGNMENT { write_to_file(" = "); } MUST_EXPRESSION {type_verification();} MUST_SEMICOLON { write_to_file("\n"); check_syntax_errors(); print_type_error_warning(); }
+				    | VAR { print_tabs(); write_to_file(yylval.var_name);verify_scope(yylval.var_name);check_constant(yylval.var_name); clear_exp_vect('\0'); left_val_type = lookup_in_table(yylval.var_name);} LB NUMARRAY RB MULTI_NUMARRAY ASSIGNMENT { write_to_file(" = "); } MUST_EXPRESSION {type_verification();} MUST_SEMICOLON { write_to_file("\n"); print_check_constant_result(); check_syntax_errors(); print_type_error_warning(); }
 					;
 
 MULTI_NUMARRAY	: LB NUMARRAY RB MULTI_NUMARRAY
@@ -241,8 +245,8 @@ NUMARRAY	: NUMBER	{ char s[MAX_NAME_LEN+3]; sprintf(s,"[%s]", yylval.var_name); 
 			| VAR		{ char s[MAX_NAME_LEN+3]; sprintf(s,"[%s]", yylval.var_name); write_to_file(s); }
 			;
 
-HAS_ASSIGNMENT	: ASSIGNMENT { write_to_file(" = "); } MUST_EXPRESSION {type_verification();} //check this
-				        | ASSIGNMENT EXPRESION_ARRAY
+HAS_ASSIGNMENT	: ASSIGNMENT { write_to_file(" = "); } MUST_EXPRESSION {type_verification();print_multidecl_error();} //check this
+				        | ASSIGNMENT EXPRESION_ARRAY {print_multidecl_error();}
 				        | /* No assignment */ {}
 				        ;
 
@@ -267,8 +271,8 @@ PARAMS_TYPE : VAR {write_to_file(yylval.var_name);insert_argument_var( yylval.va
 			| /* empty*/
 			;
 
-HAS_PARAMS	: TYPE VAR {insert_to_table(yylval.var_name,current_data_type);write_to_file(yylval.var_name);insert_type_param(current_data_type); }
-			      | TYPE  BRACKET_ARRAY VAR {insert_to_table(yylval.var_name,current_data_type); write_to_file(yylval.var_name);write_to_file("[]");bracket_counter-- ;for(;bracket_counter>0;bracket_counter--){char s[255];sprintf(s,"[%d]",DIMENSION);write_to_file(s);}}
+HAS_PARAMS	: TYPE VAR {insert_to_table(yylval.var_name,current_data_type);write_to_file(yylval.var_name);insert_type_param(current_data_type); print_multidecl_error();}
+			      | TYPE  BRACKET_ARRAY VAR {insert_to_table(yylval.var_name,current_data_type); write_to_file(yylval.var_name);write_to_file("[]");bracket_counter-- ;for(;bracket_counter>0;bracket_counter--){char s[255];sprintf(s,"[%d]",DIMENSION);write_to_file(s);}print_multidecl_error();}
 			      | /* */
 			      ;
 
@@ -370,6 +374,7 @@ void print_table_symbols(){
 			write_to_file(str);			
 		}
 }
+
 int check_constant(char var[MAX_NAME_LEN]){
 	int is_correct=0;
 	for(int j=stack_scope_counter;j>=0;j--)
@@ -388,10 +393,19 @@ int check_constant(char var[MAX_NAME_LEN]){
 		sprintf(formatted_str,"Variable %s was declared as a const \n",var);
 		//write_to_file(formatted_str);
 		//yyerror("");
-		yyerror(formatted_str);
+		//yyerror(formatted_str);
+		strcpy(check_constant_result,formatted_str);
 	}
 
 }
+
+void print_check_constant_result(){
+	if (strcmp(check_constant_result,"")){
+		yyerror(check_constant_result);
+		strcpy(check_constant_result,"");
+	}
+}
+
 int verify_scope(char var[MAX_NAME_LEN]){
 	int found= 0;
 	int index=-1;
@@ -448,10 +462,19 @@ void insert_to_table(char var[MAX_NAME_LEN], int type)
 		sprintf(formatted_str,"Multiple declaration of variable %s \n",var);
 		//write_to_file(formatted_str);
 		//yyerror("");
-		yyerror(formatted_str);
+		//yyerror(formatted_str);
+		strcat(multiple_decl_msg,formatted_str);
 		//exit(0);
 	}
 }
+
+void print_multidecl_error(){
+	if(strcmp(multiple_decl_msg,"")){
+		yyerror(multiple_decl_msg);
+		strcpy(multiple_decl_msg,"");
+	}
+}
+
 void insert_funtion(char var[MAX_NAME_LEN], int type,int is_def)
 {	
 		strcpy(fun[table_idf].var_name,var);
@@ -806,8 +829,10 @@ void verify_fun_table(){
 			char type[20]={0},arguments[200]={0};
 			convert_type_to_string(type,fun[i].type);
 			get_format_string_types(arguments,fun[i]);
-			char formatted_str[300];
-			sprintf(formatted_str,"\n Function %s %s(%s) has not been declared \n",type,fun[i].var_name,arguments);
+			char formatted_str[312];
+			sprintf(formatted_str,"\nError on java file :: Function %s %s(%s) called but not declared \n",type,fun[i].var_name,arguments);
+			error_counter++;
+			//yyerror(formatted_str);
 			write_to_file(formatted_str);
 			break;
 		}
@@ -937,7 +962,7 @@ int merge_files(){
 
 void print_error_counter(){
 	if(error_counter>0){
-		printf("\nErrors found: %d\n\nCheck the translation filefor more details: %s\n\nTRANSLATION FAILED !!!\n",error_counter,CFILE);
+		printf("\nErrors found: %d\n\nCheck the translation file for more details: %s\n\nTRANSLATION FAILED !!!\n",error_counter,CFILE);
 	}else{
 		printf("\nErrors found: %d\n\nCheck the translation file: %s\n\nTRANSLATION SUCCESSFUL !!!\n",error_counter,CFILE);
 	}
