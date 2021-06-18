@@ -136,7 +136,7 @@ char var_name[MAX_NAME_LEN];
 
 %%
 
-program		: { fp_aux = fopen(AUXFILE,"w"); print_init();} HAS_COMMENT MAIN_CLASS LC {push_scope("global"); write_to_file("\n/* start Main Class */\n\n"); }  STATEMENTS  RC {pop_scope(); write_to_file("\n/* end Main Class */\n"); verify_fun_table(); fclose(fp_aux); merge_files();}{fp_aux = fopen(CFILE,"a");}HAS_COMMENT{fclose(fp_aux); console_msg(); exit(0); }
+program		: { fp_aux = fopen(AUXFILE,"w"); } HAS_COMMENT MAIN_CLASS LC {push_scope("global"); write_to_file("\n/* start Main Class */\n\n"); }  STATEMENTS  RC {pop_scope(); write_to_file("\n/* end Main Class */\n"); verify_fun_table(); fclose(fp_aux); merge_files();}{fp_aux = fopen(CFILE,"a");}HAS_COMMENT{fclose(fp_aux); console_msg(); exit(0); }
 			| /* Empty file */	{ write_to_file("\n"); exit(2); }
 			;
 
@@ -354,7 +354,7 @@ SEMICOLON_NOT_COMA	: SEMICOLON { write_to_file(";"); }
 
 MUST_EXPRESSION : EXPRESION
 				| VAR ASSIGNMENT { write_to_file(yylval.var_name); write_to_file("="); } EXPRESION { }
-				| EXPRESION ASSIGNMENT { write_to_file("="); } EXPRESION { strcat(syntax_errors,"Syntax error: expected '==' operator\n"); }
+				| EXPRESION ASSIGNMENT { write_to_file("="); } EXPRESION { strcat(syntax_errors,"Syntax error: cannot assign to an expression. Expected '==' operator\n"); }
 				| /*empty*/ { strcat(syntax_errors,"Syntax error: expected expression\n"); }
 				;
 
@@ -385,9 +385,10 @@ int check_constant(char var[MAX_NAME_LEN]){
 	}
 	if(!is_correct){
 		char formatted_str[256];
-		sprintf(formatted_str,"\nVariable %s was declared as a const \n",var);
-		write_to_file(formatted_str);
-		yyerror("");
+		sprintf(formatted_str,"Variable %s was declared as a const \n",var);
+		//write_to_file(formatted_str);
+		//yyerror("");
+		yyerror(formatted_str);
 	}
 
 }
@@ -409,10 +410,11 @@ int verify_scope(char var[MAX_NAME_LEN]){
 
 	if(!found){
 		char formatted_str[256];
-		sprintf(formatted_str,"\nVariable %s was not declared in the scope  \n",var);
-		write_to_file(formatted_str);
+		sprintf(formatted_str,"Variable %s was not declared in the scope  \n",var);
+		//write_to_file(formatted_str);
 		//print_table_symbols();
-		yyerror("");
+		//yyerror("");
+		yyerror(formatted_str);
 		//exit(0);
 	}
 
@@ -443,9 +445,10 @@ void insert_to_table(char var[MAX_NAME_LEN], int type)
 	}
 	else {
 		char formatted_str[256];
-		sprintf(formatted_str,"\nMultiple declaration of variable %s \n",var);
-		write_to_file(formatted_str);
-		yyerror("");
+		sprintf(formatted_str,"Multiple declaration of variable %s \n",var);
+		//write_to_file(formatted_str);
+		//yyerror("");
+		yyerror(formatted_str);
 		//exit(0);
 	}
 }
@@ -464,9 +467,10 @@ void insert_argument_var(char var[MAX_NAME_LEN]){
 		insert_type_param(type);
 	}else{
 		char formatted_str[256];
-		sprintf(formatted_str,"\nVariable not declare %s \n",var);
-		write_to_file(formatted_str);
-		yyerror("");
+		sprintf(formatted_str,"Variable not declare %s \n",var);
+		//write_to_file(formatted_str);
+		//yyerror("");
+		yyerror(formatted_str);
 	}
 }
 void insert_type_param(int type){
@@ -525,7 +529,8 @@ void create_scope_name_and_push_it(){
 void push_scope(char var[MAX_NAME_LEN] ){
 	if(stack_scope_counter == MAX_SCOPE){
 	printf("SCOPE STACK IS FULL");
-		yyerror("");
+		//yyerror("");
+		yyerror("SCOPE STACK IS FULL");
 		exit(0);
 	}
 	strcpy(stack_scope[++stack_scope_counter],var);
@@ -594,7 +599,7 @@ void print_type_error_warning(){
 			yyerror(type_cast_str_error);
 			strcpy(type_cast_str_error,"\0");
 		}else if(left_val_type!=right_val_type && !casting_table.implicit[right_val_type][left_val_type]){
-			printf("\nl: %d, r: %d\n", left_val_type, right_val_type);
+			//printf("\nl: %d, r: %d\n", left_val_type, right_val_type);
 			char aux2[512];
 			char *sty1 = type_to_str(48+right_val_type);
 			char * sty2 = type_to_str(48+left_val_type);
@@ -932,9 +937,9 @@ int merge_files(){
 
 void print_error_counter(){
 	if(error_counter>0){
-		printf("\nErrors found: %d\n\nTRANSLATION FAILED !!!\n",error_counter);
+		printf("\nErrors found: %d\n\nCheck the translation filefor more details: %s\n\nTRANSLATION FAILED !!!\n",error_counter,CFILE);
 	}else{
-		printf("\nErrors found: %d\n\nTRANSLATION SUCCESSFUL !!!\n",error_counter);
+		printf("\nErrors found: %d\n\nCheck the translation file: %s\n\nTRANSLATION SUCCESSFUL !!!\n",error_counter,CFILE);
 	}
 }
 
@@ -964,7 +969,6 @@ int console_msg(){
 
     fclose(fp);
 
-	printf("Check the translation file: %s\n",CFILE);
 	print_error_counter();
 
     return 0;
@@ -972,5 +976,5 @@ int console_msg(){
 
 void write_to_file(char *s){
 	fputs(s,fp_aux);
-	printf("%s",s);
+	//printf("%s",s);
 }
