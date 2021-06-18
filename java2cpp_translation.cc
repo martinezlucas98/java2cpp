@@ -1,1 +1,1 @@
-// This is the file where ypur translation will be
+// This is the file where your translation will be
