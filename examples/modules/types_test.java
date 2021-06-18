@@ -1,4 +1,5 @@
 public class Main {
+  public static final int x;
   public static void main(String[] args) {
     int var1;
     double var2;
