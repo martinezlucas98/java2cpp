@@ -4,7 +4,6 @@ public class Main {
   }
   public static void funbar(int num1, char num2) {
     int x;
-    num1=0;
 
 }
 
