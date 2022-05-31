@@ -19,7 +19,7 @@ Simply pipe your input file into the translator executable `a.out` :
 
 ## Compiling Lex And Yacc
 
-Make sure you've installed flex and bison on your system. For more information read the [dependencies file.](https://github.com/martinezlucas98/java2cpp/blob/main/DEPENDENCIES.md)
+Make sure you've installed flex and bison on your system.
 
 If you choose to modify the lex `java2cpp.l` or yacc `java2cpp.y` files, you would need to step through the following commands in the terminal to update your file changes.
 
@@ -49,4 +49,4 @@ You are more than welcome to help java2cpp become more robust by adding new feat
 
 All you need to do is fork this repo and begin coding! :tada:
 
-Please read the [contributing guide](https://github.com/martinezlucas98/java2cpp/blob/main/README.md) to learn about our contributing rules and standards.
+Please read the [contributing guide](https://github.com/martinezlucas98/java2cpp/blob/7deaf1ec1d95bb6df4a303eae44b620190cfb075/CONTRIBUTING.md) to learn about our contributing rules and standards.
