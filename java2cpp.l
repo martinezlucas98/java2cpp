@@ -36,8 +36,11 @@
 "public"              {return PUBLIC;}
 "private"             {return PRIVATE;}
 "void"                {return VOID;}
+"final"					{return FINAL;}
 "System.out.println"   {return PRINTLN;}
 "System.out.print"	    {return PRINT;}
+"Scanner"                {return SCANNER;}
+"System.in"              {return SYS_IN;}
 
 ":"										{return COLON;}
 "?"										{return QM;}
@@ -71,9 +74,9 @@
 "return"					{return RETURN;}
 
 [$_a-zA-Z]+[$_a-zA-Z0-9]*			{strcpy(yylval.var_name, yytext);return VAR;}
-[0-9]+("."[0-9]+)?            {strcpy(yylval.var_name, yytext);return NUMBER;}
+("-")?[0-9]+("."[0-9]+)?            {strcpy(yylval.var_name, yytext);return NUMBER;}
 \"[^"]*\"                     {strcpy(yylval.var_name, yytext);return QUOTED_STRING;}
-'[^']*'                       {strcpy(yylval.var_name, yytext);return QUOTED_STRING;}
+'[^']*'                       {strcpy(yylval.var_name, yytext);return QUOTED_CHAR;}
 
 
 %%
