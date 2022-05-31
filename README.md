@@ -3,6 +3,8 @@
 FLEX &amp; BISON Java to C++ translator.
 
 > :warning: **Warning:** java2cpp is still under development and constant changes.
+> 
+> :eyes: Full 50+ pages documentation available in 🇪🇸**Spanish**:mexico: [here.](https://github.com/martinezlucas98/java2cpp/blob/04903688d741634bf9f98a4f56cdbcde8a5dc74c/Documentacion%20java2cpp%20-%20Lucas%20Martinez%20y%20Joaquin%20Caballero.pdf)
 > <br/><br/>
 
 # Documentation
